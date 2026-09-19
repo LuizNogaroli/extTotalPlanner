@@ -1,0 +1,671 @@
+﻿<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Planner Estratégico</title>
+    <!-- Tailwind CSS (Arquivo local para burlar a CSP do Manifest V3) -->
+    <link rel="stylesheet" href="css/tailwind.css">
+    <link rel="stylesheet" href="css/themes.css">
+    <link rel="stylesheet" href="css/styles.css">
+    <style>
+        @media print {
+            body * {
+                visibility: hidden;
+            }
+            #global-day-modal, #global-day-modal * {
+                visibility: visible;
+            }
+            #global-day-modal {
+                position: absolute;
+                left: 0;
+                top: 0;
+                width: 100%;
+                height: 100%;
+                background-color: white !important;
+                border: none;
+                box-shadow: none;
+                padding: 0 !important;
+                margin: 0 !important;
+            }
+            .print-hide {
+                display: none !important;
+            }
+            .flex-1.overflow-auto {
+                overflow: visible !important;
+            }
+        }
+    </style>
+</head>
+<body data-theme="light" data-font-size="normal">
+    
+    <div class="flex h-screen w-full overflow-hidden">
+        
+        <!-- Sidebar (Estratégico e Navegação) -->
+        <aside id="sidebar" class="w-64 bg-[var(--bg-panel)] border-r border-[var(--border-color)] flex flex-col p-4 shadow-sm flex-shrink-0">
+            <h1 class="text-2xl font-bold text-[var(--primary-color)] mb-8 truncate" data-i18n="appName">Total Planner</h1>
+            
+            <nav class="flex-1 flex flex-col overflow-hidden mt-4">
+                <div class="flex-shrink-0 space-y-2">
+                    <!-- Estratégico -->
+                    <details class="group">
+                        <summary class="text-xs font-semibold text-[var(--text-secondary)] uppercase mb-2 px-2 cursor-pointer list-none flex items-center justify-between">
+                            Estratégico
+                            <span class="transform group-open:rotate-90 transition-transform">▶</span>
+                        </summary>
+                        <div class="space-y-1">
+                            <a href="#" id="menu-missao" class="block py-1 px-3 rounded hover:bg-[var(--border-color)] transition text-sm">Missão</a>
+                            <a href="#" id="menu-visao" class="block py-1 px-3 rounded hover:bg-[var(--border-color)] transition text-sm">Visão</a>
+                            <a href="#" id="menu-objetivos" class="block py-1 px-3 rounded hover:bg-[var(--border-color)] transition text-sm">Objetivos</a>
+                        </div>
+                    </details>
+                    
+                    <!-- Tático -->
+                    <details class="group">
+                        <summary class="text-xs font-semibold text-[var(--text-secondary)] uppercase mb-2 px-2 cursor-pointer list-none flex items-center justify-between">
+                            Tático
+                            <span class="transform group-open:rotate-90 transition-transform">▶</span>
+                        </summary>
+                        <div class="space-y-1">
+                            <a href="#" id="menu-plano-anual" class="block py-1 px-3 rounded hover:bg-[var(--border-color)] transition text-sm">Plano Anual</a>
+                            <a href="#" id="menu-plano-mensal" class="block py-1 px-3 rounded hover:bg-[var(--border-color)] transition text-sm">Plano Mensal</a>
+                            <a href="#" id="menu-plano-semanal" class="block py-1 px-3 rounded hover:bg-[var(--border-color)] transition text-sm">Plano Semanal</a>
+                        </div>
+                    </details>
+
+                    <!-- Operacional -->
+                    <details class="group" open>
+                        <summary class="text-xs font-semibold text-[var(--text-secondary)] uppercase mb-2 px-2 cursor-pointer list-none flex items-center justify-between">
+                            Operacional
+                            <span class="transform group-open:rotate-90 transition-transform">▶</span>
+                        </summary>
+                        <div class="space-y-1">
+                            <a href="#" id="menu-dashboard" class="block py-1 px-3 rounded hover:bg-[var(--border-color)] transition text-sm">Meu Planner</a>
+                            <a href="#" id="menu-atividades" class="block py-1 px-3 rounded hover:bg-[var(--border-color)] transition text-sm">Atividade</a>
+                            <a href="#" class="block py-1 px-3 rounded hover:bg-[var(--border-color)] transition text-sm">Alarmes</a>
+                        </div>
+                    </details>
+                </div>
+
+                <div class="mt-auto pt-4 border-t border-[var(--border-color)] flex-shrink-0 space-y-1">
+                    <a href="#" class="block py-1.5 px-3 rounded hover:bg-[var(--border-color)] transition text-sm text-[var(--text-primary)]" onclick="window.appRouter.openManager('contexto')">🎭 Contextos / Papeis</a>
+                    <a href="#" id="menu-settings" class="block py-1.5 px-3 rounded hover:bg-[var(--border-color)] transition text-sm text-[var(--text-primary)]">⚙️ Configurações</a>
+                </div>
+            </nav>
+        </aside>
+
+        <!-- Conteúdo Principal (Visão da Semana) -->
+        <main class="flex-1 flex flex-col h-full bg-[var(--bg-color)] relative">
+            <!-- Main Header -->
+            <header class="border-b border-[var(--border-color)] px-4 bg-[var(--bg-panel)] flex-shrink-0 py-2">
+            <div class="flex items-center justify-between w-full">
+                <!-- Esquerda (Menu) -->
+                <div class="flex items-center flex-1">
+                    <button id="btn-toggle-sidebar" class="text-[var(--text-secondary)] hover:text-[var(--primary-color)] transition focus:outline-none p-1 mr-2 flex-shrink-0" title="Menu">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path></svg>
+                    </button>
+                    <span id="current-week-display" class="hidden"></span>
+                    <h2 id="main-view-title" class="hidden"></h2>
+                </div>
+
+                <!-- Centro (Reservado para período buttons ou vazio) -->
+                <div class="flex justify-center flex-[2] md:flex-[3] overflow-x-auto" style="scrollbar-width: none;">
+                </div>
+
+                <!-- Direita (AÃ§Ãµes) -->
+                <div class="flex items-center justify-end flex-1 space-x-2">
+                    <button id="btn-theme-toggle" title="Alternar Tema" class="p-2 rounded text-[var(--text-secondary)] hover:bg-[var(--border-color)] hover:text-[var(--primary-color)] transition hidden sm:block">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <circle cx="12" cy="12" r="5"></circle>
+                            <line x1="12" y1="1" x2="12" y2="3"></line>
+                            <line x1="12" y1="21" x2="12" y2="23"></line>
+                            <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
+                            <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+                            <line x1="1" y1="12" x2="3" y2="12"></line>
+                            <line x1="21" y1="12" x2="23" y2="12"></line>
+                            <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
+                            <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+                        </svg>
+                    </button>
+                    <button class="text-sm border border-[var(--border-color)] text-[var(--text-secondary)] px-3 py-1.5 rounded hover:bg-[var(--border-color)] transition shadow-sm items-center space-x-1 hidden md:flex" title="Gerar RelatÃ³rio A4 da Semana">
+                        <span>ðŸ–¨ï¸</span> <span>RelatÃ³rio</span>
+                    </button>
+                    <button id="btn-new-activity" class="bg-[var(--primary-color)] text-white px-3 py-1.5 rounded hover:bg-[var(--primary-hover)] transition shadow-sm text-sm font-bold whitespace-nowrap">+ Novo</button>
+                </div>
+            </div>
+            </header>
+
+            <!-- Sub Header (Navegação DinÃ¢mica) -->
+            <div class="bg-[var(--bg-panel)] border-b border-[var(--border-color)] px-4 py-1 flex justify-center">
+                <div id="dynamic-header-tabs" class="flex items-center space-x-2"></div>
+            </div>
+
+            <!-- Dashboard DinÃ¢mico (Visão Principal) -->
+            <div id="view-dashboard" class="flex-1 overflow-auto p-6 max-w-7xl mx-auto w-full transition-all flex flex-col">
+                
+                
+                <!-- VISÃƒO SEMANAL -->
+                <div id="weekly-view-wrapper" class="flex flex-col h-full">
+                    <!-- Ãrea de PendÃªncias/Tarefas soltas na Semana -->
+                    <details class="mb-6 bg-[var(--bg-panel)] border-l-4 border-yellow-400 border border-[var(--border-color)] rounded-lg shadow-sm group" open>
+                        <summary class="p-4 cursor-pointer font-bold text-[var(--text-primary)] flex justify-between items-center list-none outline-none">
+                            <div class="flex items-center space-x-2">
+                                <span class="transform group-open:rotate-90 transition-transform text-[var(--text-secondary)] text-xs">▶</span>
+                                <span>Foco da Semana (Sem data definida)</span>
+                            </div>
+                            <button class="text-xs text-[var(--primary-color)] hover:underline" onclick="event.preventDefault();">+ Adicionar Ã  Semana</button>
+                        </summary>
+                        <div class="p-4 pt-0 border-t border-[var(--border-color)] mt-2">
+                            <ul class="text-sm text-[var(--text-secondary)] space-y-2">
+                                <li class="flex items-center space-x-2"><input type="checkbox" class="rounded"> <span>Revisar metas do trimestre</span></li>
+                                <li class="flex items-center space-x-2"><input type="checkbox" class="rounded"> <span>Agendar manutenÃ§Ã£o do carro</span></li>
+                            </ul>
+                        </div>
+                    </details>
+
+                    <div id="weekly-grid" class="flex flex-col space-y-4 mt-4">
+                        <!-- Preenchido via JavaScript -->
+                    </div>
+                </div>
+
+                <!-- VISÃƒO DIÃRIA (Agenda) -->
+                <div id="daily-view-wrapper" class="hidden flex-1 h-full flex-col bg-[var(--bg-panel)] p-6 rounded-lg shadow-sm border border-[var(--border-color)] overflow-auto">
+
+                    <div class="grid grid-cols-1 md:grid-cols-5 gap-6 h-full min-h-full">
+                        <!-- COLUNA PRINCIPAL: PENDÃŠNCIAS/ATIVIDADES -->
+                        <div class="md:col-span-3 flex flex-col space-y-4">
+                            <div class="flex justify-between items-center border-b border-[var(--border-color)] pb-2">
+                                <h4 class="font-bold text-lg text-[var(--text-primary)] flex items-center space-x-2">
+                                    <span id="daily-view-title">ðŸ“… PendÃªncias do Dia</span>
+                                </h4>
+                                <button id="btn-day-modal-new" class="print-hide text-xs bg-[var(--primary-color)] text-white px-3 py-1.5 rounded hover:bg-[var(--primary-hover)] transition shadow-sm font-bold">+ Nova Atividade</button>
+                            </div>
+                            <div id="day-modal-content" class="flex-1 space-y-3 mb-6">
+                                <!-- Atividades injetadas aqui via JS -->
+                            </div>
+                        </div>
+
+                        <!-- COLUNA LATERAL: WIDGETS E MÃ“DULOS -->
+                        <div class="md:col-span-2 space-y-6 flex flex-col">
+                            
+                            <!-- WIDGET: HÃBITOS -->
+                            <div id="widget-habitos-container" class="border border-[var(--border-color)] rounded p-4 bg-[var(--bg-color)] hidden">
+                                <div class="flex justify-between items-center mb-3 border-b border-[var(--border-color)] pb-2">
+                                    <h4 class="font-bold text-[var(--primary-color)] flex items-center space-x-2">
+                                        <span>âœ”ï¸ HÃ¡bitos</span>
+                                    </h4>
+                                    <button id="btn-save-all-habits" class="text-xs bg-[var(--primary-color)] text-white px-2 py-1 rounded">Salvar Todos</button>
+                                </div>
+                                <div id="habitos-form-area" class="space-y-3"></div>
+                            </div>
+
+                            <!-- WIDGET: DIÃRIO -->
+                            <div id="widget-journal-container" class="border border-[var(--border-color)] rounded p-4 bg-[var(--bg-color)] flex flex-col h-64">
+                                <div class="flex justify-between items-center mb-2">
+                                    <h4 class="font-bold text-[var(--primary-color)] flex items-center space-x-2">
+                                        <span>ðŸ“– DiÃ¡rio</span>
+                                    </h4>
+                                    <button id="btn-report-journal" class="text-xs text-[var(--text-secondary)]">Gerar RelatÃ³rio</button>
+                                </div>
+                                <span id="journal-save-status" class="text-xs text-green-500 mb-2 block h-4"></span>
+                                <textarea id="daily-journal-input" class="w-full flex-1 border border-[var(--border-color)] rounded p-2 bg-[var(--bg-panel)] text-sm resize-none" placeholder="Escreva como foi seu dia..."></textarea>
+                            </div>
+
+                            <!-- WIDGET: HISTÃ“RICO -->
+                            <div id="widget-container-historico" class="border border-[var(--border-color)] rounded p-4 bg-[var(--bg-color)] hidden">
+                                <h4 class="font-bold text-sm text-[var(--primary-color)] mb-2 uppercase tracking-wider">ðŸ“œ Fatos do Dia</h4>
+                                <ul id="widget-historico-content" class="text-sm space-y-2"></ul>
+                            </div>
+
+                            <!-- WIDGET: MOTIVACIONAL -->
+                            <div id="widget-container-motivacional" class="border border-[var(--border-color)] rounded p-4 bg-[var(--bg-color)] hidden">
+                                <h4 class="font-bold text-sm text-[var(--primary-color)] mb-2 uppercase tracking-wider">âœ¨ CitaÃ§Ã£o</h4>
+                                <div id="widget-motivacional-content" class="text-sm italic border-l-4 border-[var(--primary-color)] pl-3 py-1"></div>
+                            </div>
+
+                            <!-- WIDGET: DEVOCIONAL -->
+                            <div id="widget-container-devocional" class="border border-[var(--border-color)] rounded p-4 bg-[var(--bg-color)] hidden">
+                                <h4 class="font-bold text-sm text-[var(--primary-color)] mb-2 uppercase tracking-wider">ðŸ™ Devocional</h4>
+                                <div id="widget-devocional-content" class="text-sm"></div>
+                            </div>
+
+                            <!-- WIDGET: COMPRAS -->
+                            <div id="widget-container-compras" class="border border-[var(--border-color)] rounded p-4 bg-[var(--bg-color)] hidden">
+                                <h4 class="font-bold text-sm text-[var(--primary-color)] mb-2 uppercase tracking-wider">ðŸ›’ Compras</h4>
+                                <ul id="widget-compras-content" class="text-sm space-y-2"></ul>
+                            </div>
+
+                        </div>
+                    </div>
+
+</div>
+
+                <!-- Ãrea de Configurações -->
+                <div id="view-settings" class="flex-1 overflow-auto p-6 max-w-7xl mx-auto w-full hidden">
+                    <h2 class="text-2xl font-bold mb-6 text-[var(--primary-color)] border-b border-[var(--border-color)] pb-3">Configurações do Sistema</h2>
+                    <div class="space-y-8">
+                        <div>
+                            
+                        <div>
+                            <h3 class="font-bold text-lg mb-2">AparÃªncia e Layout</h3>
+                            <div class="space-y-2">
+                                <button id="btn-theme-toggle" class="px-4 py-2 bg-[var(--border-color)] rounded">Alternar Tema</button>
+                            </div>
+                            <div class="space-y-2 mt-4">
+                                <button id="btn-layout-grid" class="px-4 py-2 bg-[var(--border-color)] rounded">Grade Normal</button>
+                                <button id="btn-layout-stacked" class="px-4 py-2 bg-[var(--border-color)] rounded">Lista AcordeÃ£o</button>
+                                <button id="btn-layout-compact-grid" class="px-4 py-2 bg-[var(--border-color)] rounded">Grade Compacta</button>
+                                <button id="btn-layout-compact-stacked" class="px-4 py-2 bg-[var(--border-color)] rounded">Lista Compacta</button>
+                            </div>
+                        </div>
+                        <div id="global-day-modal" class="hidden"></div>
+                        <div id="day-modal-title" class="hidden"></div>
+
+<h3 class="font-bold text-lg mb-2">PainÃ©is Ativos</h3>
+                            <div class="space-y-2">
+                                <label><input type="checkbox" id="setting-widget-habitos"> HÃ¡bitos</label><br>
+                                <label><input type="checkbox" id="setting-widget-historico"> HistÃ³rico</label><br>
+                                <label><input type="checkbox" id="setting-widget-motivacional"> Motivacional</label><br>
+                                <label><input type="checkbox" id="setting-widget-devocional"> Devocional</label><br>
+                                <label><input type="checkbox" id="setting-widget-compras"> Compras</label><br>
+                                <label><input type="checkbox" id="setting-widget-alarme"> Alarmes</label>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+                <!-- Tela de EstatÃ­sticas -->
+                <div id="view-reports" class="flex-1 overflow-auto p-6 max-w-7xl mx-auto w-full hidden flex-col h-full">
+                    <h2 class="text-2xl font-bold mb-6 text-[var(--primary-color)] border-b border-[var(--border-color)] pb-3">RelatÃ³rios</h2>
+                    <div id="report-content-area"></div>
+                    <div id="report-content-body"></div>
+                    <h3 id="report-content-title"></h3>
+                </div>
+
+                <!-- Tela de EstratÃ©gias -->
+                <div id="view-strategic" class="flex-1 overflow-auto p-6 max-w-7xl mx-auto w-full hidden flex-col h-full">
+                    <div id="strategic-content-cards"></div>
+                </div>
+
+                <!-- Tela de ExportaÃ§Ã£o -->
+                <div id="view-export" class="flex-1 overflow-auto p-6 max-w-7xl mx-auto w-full hidden flex-col h-full">
+                </div>
+
+</div> <!-- Close view-dashboard -->
+
+            <!-- RODAPÃ‰ DA TELA PRINCIPAL -->
+        </main>
+    </div>
+
+    <!-- Modal Global de CRUD -->
+    <div id="global-crud-modal" class="fixed inset-0 bg-black bg-opacity-50 hidden z-50 flex items-center justify-center p-4">
+        <div class="border border-[var(--border-color)] rounded-lg shadow-xl w-full max-w-md p-6 flex flex-col max-h-[90vh]" style="background-color: var(--bg-panel);">
+            <div class="flex justify-between items-center mb-4 border-b border-[var(--border-color)] pb-3">
+                <h3 id="modal-title" class="text-xl font-bold text-[var(--primary-color)]">Novo Item</h3>
+                <button id="btn-close-modal" class="btn-cancel-modal text-[var(--text-secondary)] hover:text-[var(--text-primary)] font-bold text-xl">&times;</button>
+            </div>
+            <div class="flex-1 overflow-auto">
+                <form id="form-atividade" class="space-y-4 hidden">
+                    <input type="hidden" id="atividade-id">
+                    <input type="hidden" id="atividade-created-at">
+                    <div>
+                        <label class="block text-sm font-semibold mb-1">TÃ­tulo</label>
+                        <input type="text" id="atividade-title" class="w-full border border-[var(--border-color)] rounded p-2 bg-[var(--bg-color)]" required>
+                        <span class="form-error hidden text-red-500 text-xs mt-1 block" id="atividade-title-error"></span>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-semibold mb-1">DescriÃ§Ã£o</label>
+                        <textarea id="atividade-desc" class="w-full border border-[var(--border-color)] rounded p-2 bg-[var(--bg-color)]"></textarea>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-semibold mb-1">Data</label>
+                        <input type="date" id="atividade-date" class="w-full border border-[var(--border-color)] rounded p-2 bg-[var(--bg-color)]">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-semibold mb-1">Status</label>
+                        <select id="atividade-status" class="w-full border border-[var(--border-color)] rounded p-2 bg-[var(--bg-color)]">
+                            <option value="livre">Livre</option>
+                            <option value="concluido">ConcluÃ­do</option>
+                            <option value="cancelado">Cancelado</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-semibold mb-1">Categoria</label>
+                        <select id="atividade-category" class="w-full border border-[var(--border-color)] rounded p-2 bg-[var(--bg-color)]"></select>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-semibold mb-1">Contexto / Papel</label>
+                        <select id="atividade-contexto" class="w-full border border-[var(--border-color)] rounded p-2 bg-[var(--bg-color)]"></select>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-semibold mb-1">Matriz Eisenhower</label>
+                        <select id="atividade-eisenhower" class="w-full border border-[var(--border-color)] rounded p-2 bg-[var(--bg-color)]">
+                            <option value="q1">Q1: Urgente e Importante (Resolva Urgente)</option>
+                            <option value="q2">Q2: Importante, NÃ£o Urgente (Resolva Agora)</option>
+                            <option value="q3">Q3: Urgente, NÃ£o Importante (Delegue a Atividade)</option>
+                            <option value="q4">Q4: NÃ£o Urgente, NÃ£o Importante (Ignore, se possÃ­vel)</option>
+                        </select>
+                    </div>
+                    <div class="pt-4 border-t border-[var(--border-color)] flex justify-end space-x-2">
+                        <button type="button" class="btn-cancel-modal px-4 py-2 border border-[var(--border-color)] rounded">Cancelar</button>
+                        <button type="submit" class="px-4 py-2 text-white bg-[var(--primary-color)] rounded">Salvar</button>
+                    </div>
+                </form>
+
+                <form id="form-atividade-categoria" class="space-y-4 hidden">
+                    <input type="hidden" id="atividade-categoria-id">
+                    <div>
+                        <label class="block text-sm font-semibold mb-1">Nome</label>
+                        <input type="text" id="atividade-categoria-nome" class="w-full border border-[var(--border-color)] rounded p-2 bg-[var(--bg-color)]" required>
+                        <span class="form-error hidden text-red-500 text-xs mt-1 block" id="atividade-categoria-nome-error"></span>
+                    </div>
+                    <div class="pt-4 flex justify-end space-x-2">
+                        <button type="button" class="btn-cancel-modal px-4 py-2 border border-[var(--border-color)] rounded">Cancelar</button>
+                        <button type="submit" class="px-4 py-2 text-white bg-[var(--primary-color)] rounded">Salvar</button>
+                    </div>
+                </form>
+
+                <form id="form-contexto" class="space-y-4 hidden">
+                    <input type="hidden" id="contexto-id">
+                    <div>
+                        <label class="block text-sm font-semibold mb-1">Nome do Contexto/Papel</label>
+                        <input type="text" id="contexto-nome" class="w-full border border-[var(--border-color)] rounded p-2 bg-[var(--bg-color)]" placeholder="Ex: Trabalho, Pai, Estudante..." required>
+                        <span class="form-error hidden text-red-500 text-xs mt-1 block" id="contexto-nome-error"></span>
+                    </div>
+                    <div class="pt-4 flex justify-end space-x-2">
+                        <button type="button" class="btn-cancel-modal px-4 py-2 border border-[var(--border-color)] rounded">Cancelar</button>
+                        <button type="submit" class="px-4 py-2 text-white bg-[var(--primary-color)] rounded">Salvar</button>
+                    </div>
+                </form>
+
+                <form id="form-estrategia" class="space-y-4 hidden">
+                    <input type="hidden" id="estrategia-id">
+                    <input type="hidden" id="estrategia-date">
+                    <div>
+                        <label class="block text-sm font-semibold mb-1">Tipo</label>
+                        <select id="estrategia-type" class="w-full border border-[var(--border-color)] rounded p-2 bg-[var(--bg-color)]">
+                            <option value="meta">Meta</option>
+                            <option value="projeto">Projeto</option>
+                            <option value="sonho">Sonho</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-semibold mb-1">Conteúdo</label>
+                        <input type="text" id="estrategia-content" class="w-full border border-[var(--border-color)] rounded p-2 bg-[var(--bg-color)]" required>
+                        <span class="form-error hidden text-red-500 text-xs mt-1 block" id="estrategia-content-error"></span>
+                    </div>
+                    <div class="pt-4 flex justify-end space-x-2">
+                        <button type="button" class="btn-cancel-modal px-4 py-2 border rounded">Cancelar</button>
+                        <button type="submit" class="px-4 py-2 text-white bg-[var(--primary-color)] rounded">Salvar</button>
+                    </div>
+                </form>
+
+                <form id="form-habito" class="space-y-4 hidden">
+                    <input type="hidden" id="habito-id">
+                    <div>
+                        <label class="block text-sm font-semibold mb-1">Pergunta do HÃ¡bito</label>
+                        <input type="text" id="habito-question" class="w-full border border-[var(--border-color)] rounded p-2 bg-[var(--bg-color)]" required>
+                        <span class="form-error hidden text-red-500 text-xs mt-1 block" id="habito-question-error"></span>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-semibold mb-1">Categoria</label>
+                        <input type="text" id="habito-category" class="w-full border border-[var(--border-color)] rounded p-2 bg-[var(--bg-color)]">
+                    </div>
+                    <div class="pt-4 flex justify-end space-x-2">
+                        <button type="button" class="btn-cancel-modal px-4 py-2 border rounded">Cancelar</button>
+                        <button type="submit" class="px-4 py-2 text-white bg-[var(--primary-color)] rounded">Salvar</button>
+                    </div>
+                </form>
+
+                <form id="form-historico" class="space-y-4 hidden">
+                    <input type="hidden" id="historico-id">
+                    <div>
+                        <label class="block text-sm font-semibold mb-1">Data</label>
+                        <input type="date" id="historico-date" class="w-full border border-[var(--border-color)] rounded p-2 bg-[var(--bg-color)]" required>
+                        <span class="form-error hidden text-red-500 text-xs mt-1 block" id="historico-date-error"></span>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-semibold mb-1">Fato</label>
+                        <textarea id="historico-fato" class="w-full border border-[var(--border-color)] rounded p-2 bg-[var(--bg-color)]" required></textarea>
+                        <span class="form-error hidden text-red-500 text-xs mt-1 block" id="historico-fato-error"></span>
+                    </div>
+                    <div class="pt-4 flex justify-end space-x-2">
+                        <button type="button" class="btn-cancel-modal px-4 py-2 border rounded">Cancelar</button>
+                        <button type="submit" class="px-4 py-2 text-white bg-[var(--primary-color)] rounded">Salvar</button>
+                    </div>
+                </form>
+                
+                <form id="form-alarme" class="space-y-4 hidden">
+                    <input type="hidden" id="alarme-id">
+                    <div>
+                        <label class="block text-sm font-semibold mb-1">TÃ­tulo</label>
+                        <input type="text" id="alarme-title" class="w-full border border-[var(--border-color)] rounded p-2 bg-[var(--bg-color)]" required>
+                        <span class="form-error hidden text-red-500 text-xs mt-1 block" id="alarme-title-error"></span>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-semibold mb-1">Hora</label>
+                        <input type="time" id="alarme-time" class="w-full border border-[var(--border-color)] rounded p-2 bg-[var(--bg-color)]" required>
+                        <span class="form-error hidden text-red-500 text-xs mt-1 block" id="alarme-time-error"></span>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-semibold mb-1">RecorrÃªncia</label>
+                        <select id="alarme-recurrence" class="w-full border border-[var(--border-color)] rounded p-2 bg-[var(--bg-color)]">
+                            <option value="diario">DiÃ¡rio</option>
+                            <option value="unico">Ãšnico</option>
+                        </select>
+                    </div>
+                    <div id="alarme-date-container">
+                        <label class="block text-sm font-semibold mb-1">Data</label>
+                        <input type="date" id="alarme-date" class="w-full border border-[var(--border-color)] rounded p-2 bg-[var(--bg-color)]">
+                    </div>
+                    <div id="alarme-weekdays-container" class="hidden"></div>
+                    <div class="pt-4 flex justify-end space-x-2">
+                        <button type="button" class="btn-cancel-modal px-4 py-2 border rounded">Cancelar</button>
+                        <button type="submit" class="px-4 py-2 text-white bg-[var(--primary-color)] rounded">Salvar</button>
+                    </div>
+                </form>
+
+                <form id="form-motivacional" class="space-y-4 hidden">
+                    <input type="hidden" id="motivacional-id">
+                    <div>
+                        <label class="block text-sm font-semibold mb-1">CitaÃ§Ã£o</label>
+                        <textarea id="motivacional-citacao" class="w-full border border-[var(--border-color)] rounded p-2 bg-[var(--bg-color)]" required></textarea>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-semibold mb-1">Autor</label>
+                        <input type="text" id="motivacional-autor" class="w-full border border-[var(--border-color)] rounded p-2 bg-[var(--bg-color)]">
+                    </div>
+                    <div class="pt-4 flex justify-end space-x-2">
+                        <button type="button" class="btn-cancel-modal px-4 py-2 border rounded">Cancelar</button>
+                        <button type="submit" class="px-4 py-2 text-white bg-[var(--primary-color)] rounded">Salvar</button>
+                    </div>
+                </form>
+
+                <form id="form-devocional" class="space-y-4 hidden">
+                    <input type="hidden" id="devocional-id">
+                    <div>
+                        <label class="block text-sm font-semibold mb-1">Passagem</label>
+                        <input type="text" id="devocional-passagem" class="w-full border border-[var(--border-color)] rounded p-2 bg-[var(--bg-color)]" required>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-semibold mb-1">ReflexÃ£o</label>
+                        <textarea id="devocional-reflexao" class="w-full border border-[var(--border-color)] rounded p-2 bg-[var(--bg-color)]" required></textarea>
+                    </div>
+                    <div class="pt-4 flex justify-end space-x-2">
+                        <button type="button" class="btn-cancel-modal px-4 py-2 border rounded">Cancelar</button>
+                        <button type="submit" class="px-4 py-2 text-white bg-[var(--primary-color)] rounded">Salvar</button>
+                    </div>
+                </form>
+
+                <form id="form-compras" class="space-y-4 hidden">
+                    <input type="hidden" id="compras-id">
+                    <div>
+                        <label class="block text-sm font-semibold mb-1">Item</label>
+                        <input type="text" id="compras-item" class="w-full border border-[var(--border-color)] rounded p-2 bg-[var(--bg-color)]" required>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-semibold mb-1">Detalhes</label>
+                        <input type="text" id="compras-detalhes" class="w-full border border-[var(--border-color)] rounded p-2 bg-[var(--bg-color)]">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-semibold mb-1">Categoria</label>
+                        <input type="text" id="compras-categoria" class="w-full border border-[var(--border-color)] rounded p-2 bg-[var(--bg-color)]">
+                    </div>
+                    <div class="pt-4 flex justify-end space-x-2">
+                        <button type="button" class="btn-cancel-modal px-4 py-2 border rounded">Cancelar</button>
+                        <button type="submit" class="px-4 py-2 text-white bg-[var(--primary-color)] rounded">Salvar</button>
+                    </div>
+                </form>
+
+                <form id="form-missao" class="space-y-4 hidden">
+                    <div>
+                        <label class="block text-sm font-semibold mb-1">Nova VersÃ£o da Missão</label>
+                        <textarea id="missao-content" class="w-full border border-[var(--border-color)] rounded p-2 bg-[var(--bg-color)] h-32 resize-none" placeholder="Descreva sua nova Missão..." required></textarea>
+                        <span class="form-error hidden text-red-500 text-xs mt-1 block" id="missao-content-error"></span>
+                    </div>
+                    <div class="pt-4 flex justify-end space-x-2">
+                        <button type="button" class="btn-cancel-modal px-4 py-2 border rounded">Cancelar</button>
+                        <button type="submit" class="px-4 py-2 text-white bg-[var(--primary-color)] rounded">Atualizar Missão</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Global de VisualizaÃ§Ã£o -->
+    <div id="global-view-modal" class="fixed inset-0 bg-black bg-opacity-50 hidden z-50 flex items-center justify-center p-4">
+        <div class="border border-[var(--border-color)] rounded-lg shadow-xl w-full max-w-md p-6 flex flex-col max-h-[90vh]" style="background-color: var(--bg-panel);">
+            <div class="flex justify-between items-center mb-4 border-b border-[var(--border-color)] pb-3">
+                <h3 class="text-xl font-bold text-[var(--primary-color)]">VisualizaÃ§Ã£o</h3>
+                <button class="btn-close-view text-[var(--text-secondary)] font-bold text-xl">&times;</button>
+            </div>
+            <div class="flex-1 overflow-auto space-y-4">
+                <h4 id="view-title" class="font-bold text-lg"></h4>
+                <div id="view-status" class="inline-block px-2 py-1 bg-gray-200 text-xs font-semibold rounded uppercase"></div>
+                <div id="view-date" class="text-sm"></div>
+                <div id="view-desc" class="text-sm whitespace-pre-wrap p-3 rounded border border-[var(--border-color)] bg-[var(--bg-color)]"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Global de Gerenciamento -->
+    <div id="global-manager-modal" class="fixed inset-0 bg-black bg-opacity-50 hidden z-50 flex items-center justify-center p-4">
+        <div class="border border-[var(--border-color)] rounded-lg shadow-xl w-full max-w-2xl p-6 flex flex-col max-h-[85vh]" style="background-color: var(--bg-panel);">
+            <div class="flex justify-between items-center mb-4 border-b border-[var(--border-color)] pb-3">
+                <h3 id="manager-modal-title" class="text-xl font-bold text-[var(--primary-color)]">Gerenciar</h3>
+                <button class="btn-close-manager text-[var(--text-secondary)] font-bold text-xl">&times;</button>
+            </div>
+            <div class="mb-4">
+                <button id="btn-manager-add" class="bg-[var(--primary-color)] text-white px-3 py-1.5 rounded">+ Novo Item</button>
+            </div>
+            <div id="manager-modal-list" class="flex-1 overflow-auto space-y-2"></div>
+        </div>
+        </div>`n`n    <!-- View - Educacional Missão -->
+    <div id="view-missao-educacional" class="flex-1 overflow-auto p-6 max-w-7xl mx-auto w-full hidden flex-col h-full">
+        <div class="mb-8">
+            <button id="btn-voltar-missao" class="px-4 py-2 bg-gray-500 text-white rounded-lg font-semibold hover:bg-gray-600 transition-all flex items-center gap-2">
+                â† Voltar para Missão
+            </button>
+        </div>
+
+        <div class="space-y-8">
+            <section>
+                <h2 class="text-3xl font-bold text-[var(--primary-color)] mb-4">ðŸ“š O que Ã© uma Missão?</h2>
+                <p class="text-lg text-[var(--text-primary)] leading-relaxed">Uma Missão Ã© uma declaraÃ§Ã£o clara e concisa que define o <strong>propÃ³sito fundamental</strong> de sua vida ou negÃ³cio. Ela responde Ã  pergunta essencial: <em>"Por que eu existo?" ou "Para que eu trabalho?"</em></p>
+            </section>
+
+            <section class="bg-[var(--bg-panel)] p-6 rounded-lg border border-[var(--border-color)]">
+                <h3 class="text-2xl font-bold text-[var(--primary-color)] mb-4">âœ¨ CaracterÃ­sticas de uma Boa Missão</h3>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div class="bg-blue-50 dark:bg-blue-950/20 p-4 rounded-lg border-l-4 border-blue-500">
+                        <h4 class="font-bold text-[var(--primary-color)] mb-1">Significativa</h4>
+                        <p class="text-sm text-[var(--text-secondary)]">Expressa valores e crenÃ§as profundas</p>
+                    </div>
+                    <div class="bg-blue-50 dark:bg-blue-950/20 p-4 rounded-lg border-l-4 border-blue-500">
+                        <h4 class="font-bold text-[var(--primary-color)] mb-1">Permanente</h4>
+                        <p class="text-sm text-[var(--text-secondary)]">NÃ£o muda facilmente, serve como Ã¢ncora</p>
+                    </div>
+                    <div class="bg-blue-50 dark:bg-blue-950/20 p-4 rounded-lg border-l-4 border-blue-500">
+                        <h4 class="font-bold text-[var(--primary-color)] mb-1">Inspiradora</h4>
+                        <p class="text-sm text-[var(--text-secondary)]">Motiva aÃ§Ãµes e decisÃµes diÃ¡rias</p>
+                    </div>
+                    <div class="bg-blue-50 dark:bg-blue-950/20 p-4 rounded-lg border-l-4 border-blue-500">
+                        <h4 class="font-bold text-[var(--primary-color)] mb-1">Concisa</h4>
+                        <p class="text-sm text-[var(--text-secondary)]">Clara o suficiente para ser memorizada</p>
+                    </div>
+                    <div class="bg-blue-50 dark:bg-blue-950/20 p-4 rounded-lg border-l-4 border-blue-500">
+                        <h4 class="font-bold text-[var(--primary-color)] mb-1">AutÃªntica</h4>
+                        <p class="text-sm text-[var(--text-secondary)]">Reflete quem vocÃª verdadeiramente Ã©</p>
+                    </div>
+                    <div class="bg-blue-50 dark:bg-blue-950/20 p-4 rounded-lg border-l-4 border-blue-500">
+                        <h4 class="font-bold text-[var(--primary-color)] mb-1">Abrangente</h4>
+                        <p class="text-sm text-[var(--text-secondary)]">Engloba diferentes aspectos da vida</p>
+                    </div>
+                </div>
+            </section>
+
+            <section class="bg-[var(--bg-panel)] p-6 rounded-lg border border-[var(--border-color)]">
+                <h3 class="text-2xl font-bold text-[var(--primary-color)] mb-6">ðŸ”„ DiferenÃ§as Importantes</h3>
+                <div class="space-y-4">
+                    <div class="border-l-4 border-green-500 pl-4">
+                        <h4 class="font-bold text-[var(--primary-color)] mb-2">Missão vs Visão</h4>
+                        <p class="text-[var(--text-primary)]">A <em>Missão</em> Ã© o propÃ³sito presente (<strong>por que faÃ§o</strong>), enquanto a <em>Visão</em> Ã© o futuro desejado (<strong>aonde quero chegar</strong>)</p>
+                    </div>
+                    <div class="border-l-4 border-green-500 pl-4">
+                        <h4 class="font-bold text-[var(--primary-color)] mb-2">Missão vs Metas</h4>
+                        <p class="text-[var(--text-primary)]">A <em>Missão</em> Ã© permanente e atemporal, enquanto as <em>Metas</em> sÃ£o especÃ­ficas, mensurÃ¡veis e com prazo</p>
+                    </div>
+                </div>
+            </section>
+
+            <section class="bg-[var(--bg-panel)] p-6 rounded-lg border border-[var(--border-color)]">
+                <h3 class="text-2xl font-bold text-[var(--primary-color)] mb-6">ðŸ’¼ Exemplos PrÃ¡ticos</h3>
+                <div class="space-y-4">
+                    <div class="bg-amber-50 dark:bg-amber-950/20 p-4 rounded-lg">
+                        <h4 class="font-bold text-amber-900 dark:text-amber-300 mb-2">ðŸ“Œ Pessoal</h4>
+                        <p class="italic text-[var(--text-secondary)]">"Impactar positivamente a vida das pessoas ao meu redor atravÃ©s de aÃ§Ãµes de integridade, empatia e excelÃªncia"</p>
+                    </div>
+                    <div class="bg-purple-50 dark:bg-purple-950/20 p-4 rounded-lg">
+                        <h4 class="font-bold text-purple-900 dark:text-purple-300 mb-2">ðŸ’» Profissional</h4>
+                        <p class="italic text-[var(--text-secondary)]">"Desenvolver soluÃ§Ãµes inovadoras que simplificam a vida das pessoas"</p>
+                    </div>
+                    <div class="bg-red-50 dark:bg-red-950/20 p-4 rounded-lg">
+                        <h4 class="font-bold text-red-900 dark:text-red-300 mb-2">ðŸ¢ Empresarial (Apple)</h4>
+                        <p class="italic text-[var(--text-secondary)]">"Conectar tecnologia, humanidade e artes"</p>
+                    </div>
+                </div>
+            </section>
+
+            <section class="bg-[var(--bg-panel)] p-6 rounded-lg border border-[var(--border-color)]">
+                <h3 class="text-2xl font-bold text-[var(--primary-color)] mb-4">ðŸ”„ Por que Revisar sua Missão?</h3>
+                <p class="text-[var(--text-primary)] leading-relaxed">Sua Missão nÃ£o precisa mudar frequentemente, mas deve ser revisada periodicamente para garantir que ainda representa quem vocÃª Ã© e o que realmente importa. Este planejador permite que vocÃª mantenha um histÃ³rico de suas missÃµes, capturando sua evoluÃ§Ã£o ao longo do tempo.</p>
+            </section>
+
+            <section class="bg-gradient-to-br from-yellow-50 to-amber-50 dark:from-yellow-950/30 dark:to-amber-950/30 p-6 rounded-lg border-2 border-yellow-400 dark:border-yellow-700">
+                <h4 class="text-xl font-bold text-yellow-900 dark:text-yellow-300 mb-3 flex items-center gap-2">
+                    ðŸ’¡ Dica PrÃ¡tica
+                </h4>
+                <p class="text-[var(--text-primary)] leading-relaxed">Escreva sua Missão como se fosse para um pÃºblico amplo, mas que refletisse profundamente seus valores. Releia-a frequentemente e atualize quando sentir que evoluiu como pessoa.</p>
+            </section>
+        </div>
+
+        <div class="mt-12 flex justify-start">
+            <button id="btn-voltar-missao-bottom" class="px-6 py-3 bg-gray-500 text-white rounded-lg font-semibold hover:bg-gray-600 transition-all flex items-center gap-2">
+                â† Voltar para Missão
+            </button>
+        </div>
+    </div>
+
+    <script src="js/services/StorageService.js"></script>
+    <script src="js/services/ThemeService.js"></script>
+    <script src="js/services/I18nService.js"></script>
+    <script src="js/services/NotificationService.js"></script>
+    <script src="js/services/ContentService.js"></script>
+    <script src="js/dragAndDrop.js"></script>
+    <script type="module" src="js/app.js"></script>
+</body>
+</html>
+
+
+

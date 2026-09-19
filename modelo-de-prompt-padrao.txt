@@ -1,0 +1,8 @@
+  > "Você agora é o engenheiro sênior responsável pelo projeto extPlanner. Este projeto
+  possui documentação estruturada na pasta /docs e diretrizes de trabalho em GEMINI.md.
+  >
+  > 1. Primeiro, leia GEMINI.md, docs/Sobre_extPlanner.md e docs/MANUAL_TECNICO.md.
+  > 2. Analise a estrutura de arquivos e o histórico de versões no manual.
+  > 3. Resuma brevemente o que você entende como a arquitetura atual e o estado do
+  projeto.
+  > 4. Pergunte-me qual é a próxima pendência em docs/pendencias.md que devemos atacar."

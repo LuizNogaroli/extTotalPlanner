@@ -1,0 +1,88 @@
+/* Personalizações adicionais ao Tailwind */
+body {
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+}
+
+/* Scrollbar personalizada */
+::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+}
+
+::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+    background: var(--border-color);
+    border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: var(--text-secondary);
+}
+
+/* Transição do Menu Deslizante (Sidebar) */
+#sidebar {
+    transition: margin-left 0.3s ease-in-out;
+}
+
+#sidebar.closed {
+    margin-left: -16rem; /* Equivale a w-64 do Tailwind */
+}
+
+@media (max-width: 768px) {
+    #sidebar {
+        position: absolute;
+        z-index: 50;
+        height: 100vh;
+        left: 0;
+    }
+}
+
+/* Utilitários de Cor de Fundo de Emergência */
+.bg-\[var\(--bg-panel\)\] { background-color: var(--bg-panel) !important; }
+.bg-\[var\(--bg-color\)\] { background-color: var(--bg-color) !important; }
+.bg-\[var\(--primary-color\)\] { background-color: var(--primary-color) !important; }
+.hover\:bg-\[var\(--primary-hover\)\]:hover { background-color: var(--primary-hover) !important; }
+
+/* ==========================================
+   REGRAS DE IMPRESSÃO (Folha A4)
+========================================== */
+@media print {
+    /* Esconder toda a interface principal e modais secundários */
+    header, #sidebar, #view-dashboard, #view-settings, #global-crud-modal, #global-view-modal {
+        display: none !important;
+    }
+
+    /* O Modal do Dia se torna o próprio corpo da página A4 */
+    #global-day-modal {
+        display: block !important;
+        position: absolute !important;
+        top: 0 !important;
+        left: 0 !important;
+        width: 100% !important;
+        height: auto !important;
+        background: white !important;
+        padding: 0 !important;
+    }
+
+    /* Remover bordas, sombras e limites de altura do painel do modal para fluir na impressão */
+    #global-day-modal > div {
+        border: none !important;
+        box-shadow: none !important;
+        width: 100% !important;
+        max-width: none !important;
+        height: auto !important;
+        padding: 0 !important;
+        background: white !important;
+    }
+
+    /* Esconder botões de ação e scrollbars durante a impressão */
+    .print-hide { display: none !important; }
+    
+    /* Forçar cores para melhor contraste na impressora */
+    * { color: black !important; }
+    .bg-\[var\(--bg-color\)\] { background-color: white !important; }
+}

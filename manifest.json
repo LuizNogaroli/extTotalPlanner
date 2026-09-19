@@ -1,0 +1,20 @@
+{
+  "manifest_version": 3,
+  "name": "Planner Estratégico",
+  "version": "1.0",
+  "description": "Seu hub de planejamento estratégico, tático e operacional.",
+  "chrome_url_overrides": {
+    "newtab": "index.html"
+  },
+  "permissions": [
+    "storage",
+    "alarms",
+    "notifications"
+  ],
+  "background": {
+    "service_worker": "background.js"
+  },
+  "action": {
+    "default_title": "Abrir Planner"
+  }
+}

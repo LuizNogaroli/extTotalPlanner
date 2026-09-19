@@ -1,0 +1,23 @@
+# Diretrizes do Projeto extPlanner
+
+## Protocolo de Documentação Técnica
+- **Registro Automático:** Toda mudança técnica, solução aprimorada, refatoração de infraestrutura ou decisão arquitetural deve ser registrada no arquivo `docs/MANUAL_TECNICO.md` imediatamente após a implementação.
+- **Autonomia:** O Claude Code deve realizar esta atualização de forma autônoma, sem necessidade de solicitar permissão ao operador. O objetivo é manter o registro histórico de soluções, mesmo que venham a ser substituídas no futuro.
+
+## Onboarding Rápido para uma Nova IA / Sessão
+
+Se você está chegando agora neste projeto (nova sessão, novo agente, ou retomando depois de um tempo), leia os documentos abaixo **nesta ordem** antes de propor ou implementar qualquer coisa. Eles existem justamente para que você não precise reconstruir o contexto do zero nem repetir perguntas já respondidas em sessões anteriores.
+
+1. **[`docs/Sobre_extPlanner.md`](docs/Sobre_extPlanner.md)** — leia primeiro. É o manual de visão, conceito e filosofia do produto: o que é o extPlanner, a "Pirâmide do Planejamento" (Estratégico → Horizontes → Tático → Operacional) que organiza toda a hierarquia de telas, e os módulos previstos. Sem isso, decisões de onde uma funcionalidade nova "deveria morar" na hierarquia vão sair erradas.
+2. **[`docs/MANUAL_TECNICO.md`](docs/MANUAL_TECNICO.md)** — o mapa técnico. Traz a arquitetura (SPA em Vanilla JS, estrutura de diretórios), o mapeamento de qual arquivo cuida de qual funcionalidade (seção 4), e principalmente a **seção 3 ("Soluções Técnicas de Destaque")**: cada subseção documenta um padrão de engenharia já resolvido neste projeto (ex.: por que views precisam ficar dentro de `<main>`, como evitar duplicação de registros no CRUDModal, como funciona a navegação por período nos Planos) — **leia a seção 3 inteira antes de reimplementar algo que "parece" novo**, é bem provável que já exista uma armadilha conhecida e documentada. A **seção 6 (Histórico de Versões)** dá um resumo cronológico rápido, linha a linha, de tudo que já foi feito.
+3. **[`docs/pendencias.md`](docs/pendencias.md)** — ideias e funcionalidades já discutidas com o usuário mas ainda **não implementadas**. Consulte antes de sugerir algo "novo" — pode já estar anotado aqui, às vezes com decisões de escopo já tomadas.
+4. **[`docs/historico/`](docs/historico/)** — o registro mais granular e recente de cada mudança individual, um arquivo por mudança, nomeado `<assunto>_<YYYYMMDD>_<HHMM>.md`. Cada um documenta: o que foi feito e por quê, estado antes/depois, e um plano de rollback. **Ordene os arquivos por nome (o timestamp está no nome) e leia os 3-5 mais recentes** para saber exatamente onde a última sessão parou — é a fonte mais confiável do "estado atual" do projeto, mais atualizada que qualquer resumo.
+5. **[`docs/UX_LAYOUT.md`](docs/UX_LAYOUT.md)** — registro de discussões e análises de UX/layout (desktop vs. mobile, trade-offs entre abordagens, decisões tomadas ou ainda em aberto). Diferente do `docs/historico/`, aqui ficam decisões de **design ainda não necessariamente implementadas** — consulte antes de propor uma mudança de layout, pode já haver uma análise ou decisão registrada.
+
+Depois desses cinco, o código-fonte é a fonte de verdade para "como está implementado agora" — mas os documentos acima é que explicam o *porquê* das decisões, o que o código sozinho não conta.
+
+### Regra ao concluir qualquer mudança
+Depois de implementar algo, siga o protocolo acima: atualize `docs/MANUAL_TECNICO.md` (seção 3 se for um padrão reutilizável, seção 6 sempre) e crie um arquivo novo em `docs/historico/` seguindo o mesmo formato dos existentes (O que foi feito / Estado Anterior / Estado Novo / Plano de Rollback). Se a mudança envolver uma decisão de UX/layout (inclusive uma análise sem código, como uma discussão de responsividade), registre também em `docs/UX_LAYOUT.md`. Isso é o que permite a próxima sessão (sua ou de outra IA) se situar rapidamente, como descrito acima.
+
+## Nota sobre múltiplas IAs neste projeto
+Este projeto já foi trabalhado tanto pelo Gemini CLI (ver `GEMINI.md`) quanto pelo Claude Code (este arquivo). Os dois arquivos de diretrizes são mantidos em paralelo com o mesmo conteúdo — se atualizar um, atualize o outro também, para que qualquer uma das duas ferramentas chegue à mesma orientação.

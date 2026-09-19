@@ -1,0 +1,16 @@
+{
+  "appName": "Total Planner",
+  "mission": "Missão",
+  "vision": "Visão",
+  "shortTerm": "Curto Prazo",
+  "mediumTerm": "Médio Prazo",
+  "longTerm": "Longo Prazo",
+  "todo": "Coisas para Fazer",
+  "pending": "Pendências",
+  "payable": "Contas a Pagar",
+  "receivable": "Contas a Receber",
+  "shoppingList": "Lista de Compras",
+  "brainDump": "Bloco de Notas",
+  "settings": "Configurações",
+  "newAction": "+ Nova Ação"
+}
