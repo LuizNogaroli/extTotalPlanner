@@ -1059,13 +1059,13 @@ document.addEventListener('DOMContentLoaded', async () => {
             if (btn) btn.classList.remove('bg-[var(--border-color)]', 'font-bold');
         });
 
-        // Os dois containers do centro do cabeçalho (tabs de semana do dashboard e
-        // breadcrumb de período dos Planos) são mutuamente exclusivos — cada view que
-        // precisa de um os repopula depois de chamar hideAllViews().
+        // Breadcrumb de período (cabeçalho principal) e dias da semana (sub-header) só
+        // existem no Dashboard e nos Planos — a view que precisa deles os repopula
+        // logo depois de chamar hideAllViews().
         const headerPeriodoBtn = document.getElementById('header-periodo-buttons');
         if (headerPeriodoBtn) headerPeriodoBtn.innerHTML = '';
-        const headerWeekTabs = document.getElementById('header-week-tabs');
-        if (headerWeekTabs) headerWeekTabs.innerHTML = '';
+        const dynamicHeaderTabs = document.getElementById('dynamic-header-tabs');
+        if (dynamicHeaderTabs) dynamicHeaderTabs.innerHTML = '';
         const dropdownRoot = document.getElementById('periodo-dropdown-root');
         if (dropdownRoot) dropdownRoot.innerHTML = '';
     }
@@ -2585,10 +2585,10 @@ async function renderWeeklyGrid(baseDate, layoutType) {
     grid.innerHTML = '';
     const weekNum = getWeekNumber(dates[0]);
         
-        // Renderizar tabs no cabeçalho principal (header-week-tabs).
-        // O número da semana isolado ("w38") foi substituído pelo breadcrumb de
-        // período (Ano › Mês › Semana) logo abaixo — mantém-se aqui só os dias.
-        const headerTabsContainer = document.getElementById('header-week-tabs');
+        // Renderizar os 7 dias no sub-header (dynamic-header-tabs), abaixo do
+        // cabeçalho principal — dá espaço para o breadcrumb de período (Ano › Mês ›
+        // Semana) ocupar sozinho a linha de cima, sem disputar largura com os dias.
+        const headerTabsContainer = document.getElementById('dynamic-header-tabs');
         if (headerTabsContainer) {
             let tabsHTML = '';
 
@@ -2638,13 +2638,12 @@ async function renderWeeklyGrid(baseDate, layoutType) {
             window.appRouter.goWeekly(alvo);
         });
 
-        // Manter dynamic-header-tabs vazio (compatibilidade com listeners antigos)
-        const tabsContainer = document.getElementById('dynamic-header-tabs');
-        if (tabsContainer) {
-            tabsContainer.innerHTML = '';
-        }
+        // header-week-tabs não é mais usado (dias foram para o sub-header acima) —
+        // mantido limpo para não deixar conteúdo obsoleto se algo ainda o referenciar.
+        const headerWeekTabsLegacy = document.getElementById('header-week-tabs');
+        if (headerWeekTabsLegacy) headerWeekTabsLegacy.innerHTML = '';
 
-    
+
     const firstDay = `${String(dates[0].getDate()).padStart(2, '0')}/${String(dates[0].getMonth() + 1).padStart(2, '0')}`;
     const lastDay = `${String(dates[6].getDate()).padStart(2, '0')}/${String(dates[6].getMonth() + 1).padStart(2, '0')}`;
     const currentYear = dates[0].getFullYear();
