@@ -108,11 +108,13 @@
                     <h2 id="main-view-title" class="hidden"></h2>
                 </div>
 
-                <!-- Centro (Reservado para período buttons ou vazio) -->
+                <!-- Centro (Tabs de semana/dias ou período buttons, conforme a view ativa) -->
                 <div class="flex justify-center flex-[2] md:flex-[3] overflow-x-auto" style="scrollbar-width: none;">
+                    <div id="header-week-tabs" class="flex items-center space-x-2"></div>
+                    <div id="header-periodo-buttons" class="flex items-center space-x-2"></div>
                 </div>
 
-                <!-- Direita (AÃ§Ãµes) -->
+                <!-- Direita (Ações) -->
                 <div class="flex items-center justify-end flex-1 space-x-2">
                     <button id="btn-theme-toggle" title="Alternar Tema" class="p-2 rounded text-[var(--text-secondary)] hover:bg-[var(--border-color)] hover:text-[var(--primary-color)] transition hidden sm:block">
                         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -127,38 +129,38 @@
                             <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
                         </svg>
                     </button>
-                    <button class="text-sm border border-[var(--border-color)] text-[var(--text-secondary)] px-3 py-1.5 rounded hover:bg-[var(--border-color)] transition shadow-sm items-center space-x-1 hidden md:flex" title="Gerar RelatÃ³rio A4 da Semana">
-                        <span>ðŸ–¨ï¸</span> <span>RelatÃ³rio</span>
+                    <button class="text-sm border border-[var(--border-color)] text-[var(--text-secondary)] px-3 py-1.5 rounded hover:bg-[var(--border-color)] transition shadow-sm items-center space-x-1 hidden md:flex" title="Gerar Relatório A4 da Semana">
+                        <span>🖨️</span> <span>Relatório</span>
                     </button>
                     <button id="btn-new-activity" class="bg-[var(--primary-color)] text-white px-3 py-1.5 rounded hover:bg-[var(--primary-hover)] transition shadow-sm text-sm font-bold whitespace-nowrap">+ Novo</button>
                 </div>
             </div>
             </header>
 
-            <!-- Sub Header (Navegação DinÃ¢mica) -->
+            <!-- Sub Header (Navegação Dinâmica) -->
             <div class="bg-[var(--bg-panel)] border-b border-[var(--border-color)] px-4 py-1 flex justify-center">
                 <div id="dynamic-header-tabs" class="flex items-center space-x-2"></div>
             </div>
 
-            <!-- Dashboard DinÃ¢mico (Visão Principal) -->
+            <!-- Dashboard Dinâmico (Visão Principal) -->
             <div id="view-dashboard" class="flex-1 overflow-auto p-6 max-w-7xl mx-auto w-full transition-all flex flex-col">
                 
                 
-                <!-- VISÃƒO SEMANAL -->
+                <!-- VISÃO SEMANAL -->
                 <div id="weekly-view-wrapper" class="flex flex-col h-full">
-                    <!-- Ãrea de PendÃªncias/Tarefas soltas na Semana -->
+                    <!-- Área de Pendências/Tarefas soltas na Semana -->
                     <details class="mb-6 bg-[var(--bg-panel)] border-l-4 border-yellow-400 border border-[var(--border-color)] rounded-lg shadow-sm group" open>
                         <summary class="p-4 cursor-pointer font-bold text-[var(--text-primary)] flex justify-between items-center list-none outline-none">
                             <div class="flex items-center space-x-2">
                                 <span class="transform group-open:rotate-90 transition-transform text-[var(--text-secondary)] text-xs">▶</span>
                                 <span>Foco da Semana (Sem data definida)</span>
                             </div>
-                            <button class="text-xs text-[var(--primary-color)] hover:underline" onclick="event.preventDefault();">+ Adicionar Ã  Semana</button>
+                            <button class="text-xs text-[var(--primary-color)] hover:underline" onclick="event.preventDefault();">+ Adicionar à Semana</button>
                         </summary>
                         <div class="p-4 pt-0 border-t border-[var(--border-color)] mt-2">
                             <ul class="text-sm text-[var(--text-secondary)] space-y-2">
                                 <li class="flex items-center space-x-2"><input type="checkbox" class="rounded"> <span>Revisar metas do trimestre</span></li>
-                                <li class="flex items-center space-x-2"><input type="checkbox" class="rounded"> <span>Agendar manutenÃ§Ã£o do carro</span></li>
+                                <li class="flex items-center space-x-2"><input type="checkbox" class="rounded"> <span>Agendar manutenção do carro</span></li>
                             </ul>
                         </div>
                     </details>
@@ -168,15 +170,15 @@
                     </div>
                 </div>
 
-                <!-- VISÃƒO DIÃRIA (Agenda) -->
+                <!-- VISÃO DIÁRIA (Agenda) -->
                 <div id="daily-view-wrapper" class="hidden flex-1 h-full flex-col bg-[var(--bg-panel)] p-6 rounded-lg shadow-sm border border-[var(--border-color)] overflow-auto">
 
                     <div class="grid grid-cols-1 md:grid-cols-5 gap-6 h-full min-h-full">
-                        <!-- COLUNA PRINCIPAL: PENDÃŠNCIAS/ATIVIDADES -->
+                        <!-- COLUNA PRINCIPAL: PENDÊNCIAS/ATIVIDADES -->
                         <div class="md:col-span-3 flex flex-col space-y-4">
                             <div class="flex justify-between items-center border-b border-[var(--border-color)] pb-2">
                                 <h4 class="font-bold text-lg text-[var(--text-primary)] flex items-center space-x-2">
-                                    <span id="daily-view-title">ðŸ“… PendÃªncias do Dia</span>
+                                    <span id="daily-view-title">📅 Pendências do Dia</span>
                                 </h4>
                                 <button id="btn-day-modal-new" class="print-hide text-xs bg-[var(--primary-color)] text-white px-3 py-1.5 rounded hover:bg-[var(--primary-hover)] transition shadow-sm font-bold">+ Nova Atividade</button>
                             </div>
@@ -185,53 +187,53 @@
                             </div>
                         </div>
 
-                        <!-- COLUNA LATERAL: WIDGETS E MÃ“DULOS -->
+                        <!-- COLUNA LATERAL: WIDGETS E MÓDULOS -->
                         <div class="md:col-span-2 space-y-6 flex flex-col">
                             
-                            <!-- WIDGET: HÃBITOS -->
+                            <!-- WIDGET: HÁBITOS -->
                             <div id="widget-habitos-container" class="border border-[var(--border-color)] rounded p-4 bg-[var(--bg-color)] hidden">
                                 <div class="flex justify-between items-center mb-3 border-b border-[var(--border-color)] pb-2">
                                     <h4 class="font-bold text-[var(--primary-color)] flex items-center space-x-2">
-                                        <span>âœ”ï¸ HÃ¡bitos</span>
+                                        <span>✔️ Hábitos</span>
                                     </h4>
                                     <button id="btn-save-all-habits" class="text-xs bg-[var(--primary-color)] text-white px-2 py-1 rounded">Salvar Todos</button>
                                 </div>
                                 <div id="habitos-form-area" class="space-y-3"></div>
                             </div>
 
-                            <!-- WIDGET: DIÃRIO -->
+                            <!-- WIDGET: DIÁRIO -->
                             <div id="widget-journal-container" class="border border-[var(--border-color)] rounded p-4 bg-[var(--bg-color)] flex flex-col h-64">
                                 <div class="flex justify-between items-center mb-2">
                                     <h4 class="font-bold text-[var(--primary-color)] flex items-center space-x-2">
-                                        <span>ðŸ“– DiÃ¡rio</span>
+                                        <span>📖 Diário</span>
                                     </h4>
-                                    <button id="btn-report-journal" class="text-xs text-[var(--text-secondary)]">Gerar RelatÃ³rio</button>
+                                    <button id="btn-report-journal" class="text-xs text-[var(--text-secondary)]">Gerar Relatório</button>
                                 </div>
                                 <span id="journal-save-status" class="text-xs text-green-500 mb-2 block h-4"></span>
                                 <textarea id="daily-journal-input" class="w-full flex-1 border border-[var(--border-color)] rounded p-2 bg-[var(--bg-panel)] text-sm resize-none" placeholder="Escreva como foi seu dia..."></textarea>
                             </div>
 
-                            <!-- WIDGET: HISTÃ“RICO -->
+                            <!-- WIDGET: HISTÓRICO -->
                             <div id="widget-container-historico" class="border border-[var(--border-color)] rounded p-4 bg-[var(--bg-color)] hidden">
-                                <h4 class="font-bold text-sm text-[var(--primary-color)] mb-2 uppercase tracking-wider">ðŸ“œ Fatos do Dia</h4>
+                                <h4 class="font-bold text-sm text-[var(--primary-color)] mb-2 uppercase tracking-wider">📜 Fatos do Dia</h4>
                                 <ul id="widget-historico-content" class="text-sm space-y-2"></ul>
                             </div>
 
                             <!-- WIDGET: MOTIVACIONAL -->
                             <div id="widget-container-motivacional" class="border border-[var(--border-color)] rounded p-4 bg-[var(--bg-color)] hidden">
-                                <h4 class="font-bold text-sm text-[var(--primary-color)] mb-2 uppercase tracking-wider">âœ¨ CitaÃ§Ã£o</h4>
+                                <h4 class="font-bold text-sm text-[var(--primary-color)] mb-2 uppercase tracking-wider">✨ Citação</h4>
                                 <div id="widget-motivacional-content" class="text-sm italic border-l-4 border-[var(--primary-color)] pl-3 py-1"></div>
                             </div>
 
                             <!-- WIDGET: DEVOCIONAL -->
                             <div id="widget-container-devocional" class="border border-[var(--border-color)] rounded p-4 bg-[var(--bg-color)] hidden">
-                                <h4 class="font-bold text-sm text-[var(--primary-color)] mb-2 uppercase tracking-wider">ðŸ™ Devocional</h4>
+                                <h4 class="font-bold text-sm text-[var(--primary-color)] mb-2 uppercase tracking-wider">🙏 Devocional</h4>
                                 <div id="widget-devocional-content" class="text-sm"></div>
                             </div>
 
                             <!-- WIDGET: COMPRAS -->
                             <div id="widget-container-compras" class="border border-[var(--border-color)] rounded p-4 bg-[var(--bg-color)] hidden">
-                                <h4 class="font-bold text-sm text-[var(--primary-color)] mb-2 uppercase tracking-wider">ðŸ›’ Compras</h4>
+                                <h4 class="font-bold text-sm text-[var(--primary-color)] mb-2 uppercase tracking-wider">🛒 Compras</h4>
                                 <ul id="widget-compras-content" class="text-sm space-y-2"></ul>
                             </div>
 
@@ -240,20 +242,20 @@
 
 </div>
 
-                <!-- Ãrea de Configurações -->
+                <!-- Área de Configurações -->
                 <div id="view-settings" class="flex-1 overflow-auto p-6 max-w-7xl mx-auto w-full hidden">
                     <h2 class="text-2xl font-bold mb-6 text-[var(--primary-color)] border-b border-[var(--border-color)] pb-3">Configurações do Sistema</h2>
                     <div class="space-y-8">
                         <div>
                             
                         <div>
-                            <h3 class="font-bold text-lg mb-2">AparÃªncia e Layout</h3>
+                            <h3 class="font-bold text-lg mb-2">Aparência e Layout</h3>
                             <div class="space-y-2">
                                 <button id="btn-theme-toggle" class="px-4 py-2 bg-[var(--border-color)] rounded">Alternar Tema</button>
                             </div>
                             <div class="space-y-2 mt-4">
                                 <button id="btn-layout-grid" class="px-4 py-2 bg-[var(--border-color)] rounded">Grade Normal</button>
-                                <button id="btn-layout-stacked" class="px-4 py-2 bg-[var(--border-color)] rounded">Lista AcordeÃ£o</button>
+                                <button id="btn-layout-stacked" class="px-4 py-2 bg-[var(--border-color)] rounded">Lista Acordeão</button>
                                 <button id="btn-layout-compact-grid" class="px-4 py-2 bg-[var(--border-color)] rounded">Grade Compacta</button>
                                 <button id="btn-layout-compact-stacked" class="px-4 py-2 bg-[var(--border-color)] rounded">Lista Compacta</button>
                             </div>
@@ -261,10 +263,10 @@
                         <div id="global-day-modal" class="hidden"></div>
                         <div id="day-modal-title" class="hidden"></div>
 
-<h3 class="font-bold text-lg mb-2">PainÃ©is Ativos</h3>
+<h3 class="font-bold text-lg mb-2">Painéis Ativos</h3>
                             <div class="space-y-2">
-                                <label><input type="checkbox" id="setting-widget-habitos"> HÃ¡bitos</label><br>
-                                <label><input type="checkbox" id="setting-widget-historico"> HistÃ³rico</label><br>
+                                <label><input type="checkbox" id="setting-widget-habitos"> Hábitos</label><br>
+                                <label><input type="checkbox" id="setting-widget-historico"> Histórico</label><br>
                                 <label><input type="checkbox" id="setting-widget-motivacional"> Motivacional</label><br>
                                 <label><input type="checkbox" id="setting-widget-devocional"> Devocional</label><br>
                                 <label><input type="checkbox" id="setting-widget-compras"> Compras</label><br>
@@ -275,26 +277,245 @@
                 </div>
             </div>
 
-                <!-- Tela de EstatÃ­sticas -->
+                <!-- Tela de Estatísticas -->
                 <div id="view-reports" class="flex-1 overflow-auto p-6 max-w-7xl mx-auto w-full hidden flex-col h-full">
-                    <h2 class="text-2xl font-bold mb-6 text-[var(--primary-color)] border-b border-[var(--border-color)] pb-3">RelatÃ³rios</h2>
+                    <h2 class="text-2xl font-bold mb-6 text-[var(--primary-color)] border-b border-[var(--border-color)] pb-3">Relatórios</h2>
                     <div id="report-content-area"></div>
                     <div id="report-content-body"></div>
                     <h3 id="report-content-title"></h3>
                 </div>
 
-                <!-- Tela de EstratÃ©gias -->
+                <!-- Tela de Estratégias -->
                 <div id="view-strategic" class="flex-1 overflow-auto p-6 max-w-7xl mx-auto w-full hidden flex-col h-full">
                     <div id="strategic-content-cards"></div>
                 </div>
 
-                <!-- Tela de ExportaÃ§Ã£o -->
+                <!-- Tela de Planos (Anual/Mensal/Semanal) -->
+                <div id="view-planos" class="flex-1 overflow-auto p-6 max-w-7xl mx-auto w-full hidden flex-col h-full">
+                    <div id="planos-content-cards"></div>
+                </div>
+
+                <!-- Tela de Atividades -->
+                <div id="view-atividades" class="flex-1 overflow-auto p-6 max-w-7xl mx-auto w-full hidden flex-col h-full">
+                    <div id="atividades-content-cards"></div>
+                </div>
+
+                <!-- Tela de Exportação -->
+                <!-- View - Educacional Missão -->
+                <div id="view-missao-educacional" class="flex-1 overflow-auto p-6 max-w-7xl mx-auto w-full hidden flex-col h-full">
+                    <div class="mb-8">
+                        <button id="btn-voltar-missao" class="px-4 py-2 bg-gray-500 text-white rounded-lg font-semibold hover:bg-gray-600 transition-all flex items-center gap-2">
+                            ← Voltar para Missão
+                        </button>
+                    </div>
+
+                    <div class="space-y-8">
+                        <section>
+                            <h2 class="text-3xl font-bold text-[var(--primary-color)] mb-4">📚 O que é uma Missão?</h2>
+                            <p class="text-lg text-[var(--text-primary)] leading-relaxed">Uma Missão é uma declaração clara e concisa que define o <strong>propósito fundamental</strong> de sua vida ou negócio. Ela responde à pergunta essencial: <em>"Por que eu existo?" ou "Para que eu trabalho?"</em></p>
+                        </section>
+
+                        <section class="bg-[var(--bg-panel)] p-6 rounded-lg border border-[var(--border-color)]">
+                            <h3 class="text-2xl font-bold text-[var(--primary-color)] mb-4">✨ Características de uma Boa Missão</h3>
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div class="bg-blue-50 dark:bg-blue-950/20 p-4 rounded-lg border-l-4 border-blue-500">
+                                    <h4 class="font-bold text-[var(--primary-color)] mb-1">Significativa</h4>
+                                    <p class="text-sm text-[var(--text-secondary)]">Expressa valores e crenças profundas</p>
+                                </div>
+                                <div class="bg-blue-50 dark:bg-blue-950/20 p-4 rounded-lg border-l-4 border-blue-500">
+                                    <h4 class="font-bold text-[var(--primary-color)] mb-1">Permanente</h4>
+                                    <p class="text-sm text-[var(--text-secondary)]">Não muda facilmente, serve como âncora</p>
+                                </div>
+                                <div class="bg-blue-50 dark:bg-blue-950/20 p-4 rounded-lg border-l-4 border-blue-500">
+                                    <h4 class="font-bold text-[var(--primary-color)] mb-1">Inspiradora</h4>
+                                    <p class="text-sm text-[var(--text-secondary)]">Motiva ações e decisões diárias</p>
+                                </div>
+                                <div class="bg-blue-50 dark:bg-blue-950/20 p-4 rounded-lg border-l-4 border-blue-500">
+                                    <h4 class="font-bold text-[var(--primary-color)] mb-1">Concisa</h4>
+                                    <p class="text-sm text-[var(--text-secondary)]">Clara o suficiente para ser memorizada</p>
+                                </div>
+                                <div class="bg-blue-50 dark:bg-blue-950/20 p-4 rounded-lg border-l-4 border-blue-500">
+                                    <h4 class="font-bold text-[var(--primary-color)] mb-1">Autêntica</h4>
+                                    <p class="text-sm text-[var(--text-secondary)]">Reflete quem você verdadeiramente é</p>
+                                </div>
+                                <div class="bg-blue-50 dark:bg-blue-950/20 p-4 rounded-lg border-l-4 border-blue-500">
+                                    <h4 class="font-bold text-[var(--primary-color)] mb-1">Abrangente</h4>
+                                    <p class="text-sm text-[var(--text-secondary)]">Engloba diferentes aspectos da vida</p>
+                                </div>
+                            </div>
+                        </section>
+
+                        <section class="bg-[var(--bg-panel)] p-6 rounded-lg border border-[var(--border-color)]">
+                            <h3 class="text-2xl font-bold text-[var(--primary-color)] mb-6">🔄 Diferenças Importantes</h3>
+                            <div class="space-y-4">
+                                <div class="border-l-4 border-green-500 pl-4">
+                                    <h4 class="font-bold text-[var(--primary-color)] mb-2">Missão vs Visão</h4>
+                                    <p class="text-[var(--text-primary)]">A <em>Missão</em> é o propósito presente (<strong>por que faço</strong>), enquanto a <em>Visão</em> é o futuro desejado (<strong>aonde quero chegar</strong>)</p>
+                                </div>
+                                <div class="border-l-4 border-green-500 pl-4">
+                                    <h4 class="font-bold text-[var(--primary-color)] mb-2">Missão vs Metas</h4>
+                                    <p class="text-[var(--text-primary)]">A <em>Missão</em> é permanente e atemporal, enquanto as <em>Metas</em> são específicas, mensuráveis e com prazo</p>
+                                </div>
+                            </div>
+                        </section>
+
+                        <section class="bg-[var(--bg-panel)] p-6 rounded-lg border border-[var(--border-color)]">
+                            <h3 class="text-2xl font-bold text-[var(--primary-color)] mb-6">💼 Exemplos Práticos</h3>
+                            <div class="space-y-4">
+                                <div class="bg-amber-50 dark:bg-amber-950/20 p-4 rounded-lg">
+                                    <h4 class="font-bold text-amber-900 dark:text-amber-300 mb-2">📌 Pessoal</h4>
+                                    <p class="italic text-[var(--text-secondary)]">"Impactar positivamente a vida das pessoas ao meu redor através de ações de integridade, empatia e excelência"</p>
+                                </div>
+                                <div class="bg-purple-50 dark:bg-purple-950/20 p-4 rounded-lg">
+                                    <h4 class="font-bold text-purple-900 dark:text-purple-300 mb-2">💻 Profissional</h4>
+                                    <p class="italic text-[var(--text-secondary)]">"Desenvolver soluções inovadoras que simplificam a vida das pessoas"</p>
+                                </div>
+                                <div class="bg-red-50 dark:bg-red-950/20 p-4 rounded-lg">
+                                    <h4 class="font-bold text-red-900 dark:text-red-300 mb-2">🏢 Empresarial (Apple)</h4>
+                                    <p class="italic text-[var(--text-secondary)]">"Conectar tecnologia, humanidade e artes"</p>
+                                </div>
+                            </div>
+                        </section>
+
+                        <section class="bg-[var(--bg-panel)] p-6 rounded-lg border border-[var(--border-color)]">
+                            <h3 class="text-2xl font-bold text-[var(--primary-color)] mb-4">🔄 Por que Revisar sua Missão?</h3>
+                            <p class="text-[var(--text-primary)] leading-relaxed">Sua Missão não precisa mudar frequentemente, mas deve ser revisada periodicamente para garantir que ainda representa quem você é e o que realmente importa. Este planejador permite que você mantenha um histórico de suas missões, capturando sua evolução ao longo do tempo.</p>
+                        </section>
+
+                        <section class="bg-gradient-to-br from-yellow-50 to-amber-50 dark:from-yellow-950/30 dark:to-amber-950/30 p-6 rounded-lg border-2 border-yellow-400 dark:border-yellow-700">
+                            <h4 class="text-xl font-bold text-yellow-900 dark:text-yellow-300 mb-3 flex items-center gap-2">
+                                💡 Dica Prática
+                            </h4>
+                            <p class="text-[var(--text-primary)] leading-relaxed">Escreva sua Missão como se fosse para um público amplo, mas que refletisse profundamente seus valores. Releia-a frequentemente e atualize quando sentir que evoluiu como pessoa.</p>
+                        </section>
+                    </div>
+
+                    <div class="mt-12 flex justify-start">
+                        <button id="btn-voltar-missao-bottom" class="px-6 py-3 bg-gray-500 text-white rounded-lg font-semibold hover:bg-gray-600 transition-all flex items-center gap-2">
+                            ← Voltar para Missão
+                        </button>
+                    </div>
+                </div>
+
+
+                <!-- View - Educacional Visão -->
+                <div id="view-visao-educacional" class="flex-1 overflow-auto p-6 max-w-7xl mx-auto w-full hidden flex-col h-full">
+                    <div class="mb-8">
+                        <button id="btn-voltar-visao" class="px-4 py-2 bg-gray-500 text-white rounded-lg font-semibold hover:bg-gray-600 transition-all flex items-center gap-2">
+                            ← Voltar para Visão
+                        </button>
+                    </div>
+
+                    <div class="space-y-8">
+                        <section>
+                            <h2 class="text-3xl font-bold text-[var(--primary-color)] mb-4">📚 O que é uma Visão?</h2>
+                            <p class="text-lg text-[var(--text-primary)] leading-relaxed">Uma Visão é uma declaração clara e inspiradora que descreve <strong>onde você quer chegar</strong> no futuro. Ela responde à pergunta essencial: <em>"Aonde eu quero estar daqui a alguns anos?"</em></p>
+                        </section>
+
+                        <section class="bg-[var(--bg-panel)] p-6 rounded-lg border border-[var(--border-color)]">
+                            <h3 class="text-2xl font-bold text-[var(--primary-color)] mb-4">✨ Características de uma Boa Visão</h3>
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div class="bg-blue-50 dark:bg-blue-950/20 p-4 rounded-lg border-l-4 border-blue-500">
+                                    <h4 class="font-bold text-[var(--primary-color)] mb-1">Inspiradora</h4>
+                                    <p class="text-sm text-[var(--text-secondary)]">Motiva e energiza para o futuro</p>
+                                </div>
+                                <div class="bg-blue-50 dark:bg-blue-950/20 p-4 rounded-lg border-l-4 border-blue-500">
+                                    <h4 class="font-bold text-[var(--primary-color)] mb-1">Ambiciosa</h4>
+                                    <p class="text-sm text-[var(--text-secondary)]">Desafia a ir além do estado atual</p>
+                                </div>
+                                <div class="bg-blue-50 dark:bg-blue-950/20 p-4 rounded-lg border-l-4 border-blue-500">
+                                    <h4 class="font-bold text-[var(--primary-color)] mb-1">Clara</h4>
+                                    <p class="text-sm text-[var(--text-secondary)]">Fácil de visualizar e comunicar</p>
+                                </div>
+                                <div class="bg-blue-50 dark:bg-blue-950/20 p-4 rounded-lg border-l-4 border-blue-500">
+                                    <h4 class="font-bold text-[var(--primary-color)] mb-1">Orientada ao futuro</h4>
+                                    <p class="text-sm text-[var(--text-secondary)]">Descreve um destino, não o presente</p>
+                                </div>
+                            </div>
+                        </section>
+
+                        <section class="bg-[var(--bg-panel)] p-6 rounded-lg border border-[var(--border-color)]">
+                            <h3 class="text-2xl font-bold text-[var(--primary-color)] mb-6">🔄 Diferenças Importantes</h3>
+                            <div class="space-y-4">
+                                <div class="border-l-4 border-green-500 pl-4">
+                                    <h4 class="font-bold text-[var(--primary-color)] mb-2">Visão vs Missão</h4>
+                                    <p class="text-[var(--text-primary)]">A <em>Visão</em> é o futuro desejado (<strong>aonde quero chegar</strong>), enquanto a <em>Missão</em> é o propósito presente (<strong>por que faço</strong>)</p>
+                                </div>
+                                <div class="border-l-4 border-green-500 pl-4">
+                                    <h4 class="font-bold text-[var(--primary-color)] mb-2">Visão vs Objetivos</h4>
+                                    <p class="text-[var(--text-primary)]">A <em>Visão</em> é ampla e de longo prazo, enquanto os <em>Objetivos</em> são passos concretos e mensuráveis para chegar lá</p>
+                                </div>
+                            </div>
+                        </section>
+
+                        <section class="bg-gradient-to-br from-yellow-50 to-amber-50 dark:from-yellow-950/30 dark:to-amber-950/30 p-6 rounded-lg border-2 border-yellow-400 dark:border-yellow-700">
+                            <h4 class="text-xl font-bold text-yellow-900 dark:text-yellow-300 mb-3 flex items-center gap-2">
+                                💡 Dica Prática
+                            </h4>
+                            <p class="text-[var(--text-primary)] leading-relaxed">Escreva sua Visão no presente, como se já a tivesse alcançado. Isso ajuda a torná-la mais vívida e motivadora no dia a dia.</p>
+                        </section>
+                    </div>
+
+                    <div class="mt-12 flex justify-start">
+                        <button id="btn-voltar-visao-bottom" class="px-6 py-3 bg-gray-500 text-white rounded-lg font-semibold hover:bg-gray-600 transition-all flex items-center gap-2">
+                            ← Voltar para Visão
+                        </button>
+                    </div>
+                </div>
+
+                <!-- View - Educacional Objetivos -->
+                <div id="view-objetivos-educacional" class="flex-1 overflow-auto p-6 max-w-7xl mx-auto w-full hidden flex-col h-full">
+                    <div class="mb-8">
+                        <button id="btn-voltar-objetivos" class="px-4 py-2 bg-gray-500 text-white rounded-lg font-semibold hover:bg-gray-600 transition-all flex items-center gap-2">
+                            ← Voltar para Objetivos
+                        </button>
+                    </div>
+
+                    <div class="space-y-8">
+                        <section>
+                            <h2 class="text-3xl font-bold text-[var(--primary-color)] mb-4">📚 O que são Objetivos Estratégicos?</h2>
+                            <p class="text-lg text-[var(--text-primary)] leading-relaxed">Objetivos são os <strong>marcos concretos e mensuráveis</strong> que conectam sua Missão e Visão às ações do dia a dia. Eles se dividem em três horizontes de tempo.</p>
+                        </section>
+
+                        <section class="bg-[var(--bg-panel)] p-6 rounded-lg border border-[var(--border-color)]">
+                            <h3 class="text-2xl font-bold text-[var(--primary-color)] mb-6">🎯 Os Três Prazos</h3>
+                            <div class="space-y-4">
+                                <div class="border-l-4 border-blue-500 pl-4">
+                                    <h4 class="font-bold text-[var(--primary-color)] mb-2">🏆 Longo Prazo</h4>
+                                    <p class="text-[var(--text-primary)]">Grandes marcos que levam anos para se concretizar, diretamente ligados à sua Visão.</p>
+                                </div>
+                                <div class="border-l-4 border-green-500 pl-4">
+                                    <h4 class="font-bold text-[var(--primary-color)] mb-2">📈 Médio Prazo</h4>
+                                    <p class="text-[var(--text-primary)]">Metas de alguns meses a um ano, que constroem o caminho para os objetivos de longo prazo.</p>
+                                </div>
+                                <div class="border-l-4 border-amber-500 pl-4">
+                                    <h4 class="font-bold text-[var(--primary-color)] mb-2">🎯 Curto Prazo</h4>
+                                    <p class="text-[var(--text-primary)]">Ações imediatas, de semanas a poucos meses, que geram progresso visível rapidamente.</p>
+                                </div>
+                            </div>
+                        </section>
+
+                        <section class="bg-gradient-to-br from-yellow-50 to-amber-50 dark:from-yellow-950/30 dark:to-amber-950/30 p-6 rounded-lg border-2 border-yellow-400 dark:border-yellow-700">
+                            <h4 class="text-xl font-bold text-yellow-900 dark:text-yellow-300 mb-3 flex items-center gap-2">
+                                💡 Dica Prática
+                            </h4>
+                            <p class="text-[var(--text-primary)] leading-relaxed">Use o critério SMART: objetivos devem ser Específicos, Mensuráveis, Atingíveis, Relevantes e com Tempo definido.</p>
+                        </section>
+                    </div>
+
+                    <div class="mt-12 flex justify-start">
+                        <button id="btn-voltar-objetivos-bottom" class="px-6 py-3 bg-gray-500 text-white rounded-lg font-semibold hover:bg-gray-600 transition-all flex items-center gap-2">
+                            ← Voltar para Objetivos
+                        </button>
+                    </div>
+                </div>
+
                 <div id="view-export" class="flex-1 overflow-auto p-6 max-w-7xl mx-auto w-full hidden flex-col h-full">
                 </div>
 
 </div> <!-- Close view-dashboard -->
 
-            <!-- RODAPÃ‰ DA TELA PRINCIPAL -->
+            <!-- RODAPÉ DA TELA PRINCIPAL -->
         </main>
     </div>
 
@@ -310,12 +531,12 @@
                     <input type="hidden" id="atividade-id">
                     <input type="hidden" id="atividade-created-at">
                     <div>
-                        <label class="block text-sm font-semibold mb-1">TÃ­tulo</label>
+                        <label class="block text-sm font-semibold mb-1">Título</label>
                         <input type="text" id="atividade-title" class="w-full border border-[var(--border-color)] rounded p-2 bg-[var(--bg-color)]" required>
                         <span class="form-error hidden text-red-500 text-xs mt-1 block" id="atividade-title-error"></span>
                     </div>
                     <div>
-                        <label class="block text-sm font-semibold mb-1">DescriÃ§Ã£o</label>
+                        <label class="block text-sm font-semibold mb-1">Descrição</label>
                         <textarea id="atividade-desc" class="w-full border border-[var(--border-color)] rounded p-2 bg-[var(--bg-color)]"></textarea>
                     </div>
                     <div>
@@ -326,7 +547,7 @@
                         <label class="block text-sm font-semibold mb-1">Status</label>
                         <select id="atividade-status" class="w-full border border-[var(--border-color)] rounded p-2 bg-[var(--bg-color)]">
                             <option value="livre">Livre</option>
-                            <option value="concluido">ConcluÃ­do</option>
+                            <option value="concluido">Concluído</option>
                             <option value="cancelado">Cancelado</option>
                         </select>
                     </div>
@@ -342,9 +563,9 @@
                         <label class="block text-sm font-semibold mb-1">Matriz Eisenhower</label>
                         <select id="atividade-eisenhower" class="w-full border border-[var(--border-color)] rounded p-2 bg-[var(--bg-color)]">
                             <option value="q1">Q1: Urgente e Importante (Resolva Urgente)</option>
-                            <option value="q2">Q2: Importante, NÃ£o Urgente (Resolva Agora)</option>
-                            <option value="q3">Q3: Urgente, NÃ£o Importante (Delegue a Atividade)</option>
-                            <option value="q4">Q4: NÃ£o Urgente, NÃ£o Importante (Ignore, se possÃ­vel)</option>
+                            <option value="q2">Q2: Importante, Não Urgente (Resolva Agora)</option>
+                            <option value="q3">Q3: Urgente, Não Importante (Delegue a Atividade)</option>
+                            <option value="q4">Q4: Não Urgente, Não Importante (Ignore, se possível)</option>
                         </select>
                     </div>
                     <div class="pt-4 border-t border-[var(--border-color)] flex justify-end space-x-2">
@@ -404,7 +625,7 @@
                 <form id="form-habito" class="space-y-4 hidden">
                     <input type="hidden" id="habito-id">
                     <div>
-                        <label class="block text-sm font-semibold mb-1">Pergunta do HÃ¡bito</label>
+                        <label class="block text-sm font-semibold mb-1">Pergunta do Hábito</label>
                         <input type="text" id="habito-question" class="w-full border border-[var(--border-color)] rounded p-2 bg-[var(--bg-color)]" required>
                         <span class="form-error hidden text-red-500 text-xs mt-1 block" id="habito-question-error"></span>
                     </div>
@@ -439,7 +660,7 @@
                 <form id="form-alarme" class="space-y-4 hidden">
                     <input type="hidden" id="alarme-id">
                     <div>
-                        <label class="block text-sm font-semibold mb-1">TÃ­tulo</label>
+                        <label class="block text-sm font-semibold mb-1">Título</label>
                         <input type="text" id="alarme-title" class="w-full border border-[var(--border-color)] rounded p-2 bg-[var(--bg-color)]" required>
                         <span class="form-error hidden text-red-500 text-xs mt-1 block" id="alarme-title-error"></span>
                     </div>
@@ -449,10 +670,10 @@
                         <span class="form-error hidden text-red-500 text-xs mt-1 block" id="alarme-time-error"></span>
                     </div>
                     <div>
-                        <label class="block text-sm font-semibold mb-1">RecorrÃªncia</label>
+                        <label class="block text-sm font-semibold mb-1">Recorrência</label>
                         <select id="alarme-recurrence" class="w-full border border-[var(--border-color)] rounded p-2 bg-[var(--bg-color)]">
-                            <option value="diario">DiÃ¡rio</option>
-                            <option value="unico">Ãšnico</option>
+                            <option value="diario">Diário</option>
+                            <option value="unico">Único</option>
                         </select>
                     </div>
                     <div id="alarme-date-container">
@@ -469,7 +690,7 @@
                 <form id="form-motivacional" class="space-y-4 hidden">
                     <input type="hidden" id="motivacional-id">
                     <div>
-                        <label class="block text-sm font-semibold mb-1">CitaÃ§Ã£o</label>
+                        <label class="block text-sm font-semibold mb-1">Citação</label>
                         <textarea id="motivacional-citacao" class="w-full border border-[var(--border-color)] rounded p-2 bg-[var(--bg-color)]" required></textarea>
                     </div>
                     <div>
@@ -489,7 +710,7 @@
                         <input type="text" id="devocional-passagem" class="w-full border border-[var(--border-color)] rounded p-2 bg-[var(--bg-color)]" required>
                     </div>
                     <div>
-                        <label class="block text-sm font-semibold mb-1">ReflexÃ£o</label>
+                        <label class="block text-sm font-semibold mb-1">Reflexão</label>
                         <textarea id="devocional-reflexao" class="w-full border border-[var(--border-color)] rounded p-2 bg-[var(--bg-color)]" required></textarea>
                     </div>
                     <div class="pt-4 flex justify-end space-x-2">
@@ -520,7 +741,7 @@
 
                 <form id="form-missao" class="space-y-4 hidden">
                     <div>
-                        <label class="block text-sm font-semibold mb-1">Nova VersÃ£o da Missão</label>
+                        <label class="block text-sm font-semibold mb-1">Nova Versão da Missão</label>
                         <textarea id="missao-content" class="w-full border border-[var(--border-color)] rounded p-2 bg-[var(--bg-color)] h-32 resize-none" placeholder="Descreva sua nova Missão..." required></textarea>
                         <span class="form-error hidden text-red-500 text-xs mt-1 block" id="missao-content-error"></span>
                     </div>
@@ -529,15 +750,84 @@
                         <button type="submit" class="px-4 py-2 text-white bg-[var(--primary-color)] rounded">Atualizar Missão</button>
                     </div>
                 </form>
+
+                <form id="form-visao" class="space-y-4 hidden">
+                    <div>
+                        <label class="block text-sm font-semibold mb-1">Nova Versão da Visão</label>
+                        <textarea id="visao-content" class="w-full border border-[var(--border-color)] rounded p-2 bg-[var(--bg-color)] h-32 resize-none" placeholder="Descreva sua nova Visão..." required></textarea>
+                        <span class="form-error hidden text-red-500 text-xs mt-1 block" id="visao-content-error"></span>
+                    </div>
+                    <div class="pt-4 flex justify-end space-x-2">
+                        <button type="button" class="btn-cancel-modal px-4 py-2 border rounded">Cancelar</button>
+                        <button type="submit" class="px-4 py-2 text-white bg-[var(--primary-color)] rounded">Atualizar Visão</button>
+                    </div>
+                </form>
+
+                <form id="form-objetivos" class="space-y-4 hidden">
+                    <div>
+                        <label class="block text-sm font-semibold mb-1">Prazo</label>
+                        <select id="objetivos-prazo" class="w-full border border-[var(--border-color)] rounded p-2 bg-[var(--bg-color)]" required>
+                            <option value="longo">Longo Prazo</option>
+                            <option value="medio">Médio Prazo</option>
+                            <option value="curto">Curto Prazo</option>
+                        </select>
+                        <span class="form-error hidden text-red-500 text-xs mt-1 block" id="objetivos-prazo-error"></span>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-semibold mb-1">Novo Objetivo</label>
+                        <textarea id="objetivos-content" class="w-full border border-[var(--border-color)] rounded p-2 bg-[var(--bg-color)] h-32 resize-none" placeholder="Descreva o objetivo..." required></textarea>
+                        <span class="form-error hidden text-red-500 text-xs mt-1 block" id="objetivos-content-error"></span>
+                    </div>
+                    <div class="pt-4 flex justify-end space-x-2">
+                        <button type="button" class="btn-cancel-modal px-4 py-2 border rounded">Cancelar</button>
+                        <button type="submit" class="px-4 py-2 text-white bg-[var(--primary-color)] rounded">Salvar Objetivo</button>
+                    </div>
+                </form>
+
+                <form id="form-plano_anual" class="space-y-4 hidden">
+                    <div>
+                        <label class="block text-sm font-semibold mb-1">Novo Plano Anual</label>
+                        <textarea id="plano_anual-content" class="w-full border border-[var(--border-color)] rounded p-2 bg-[var(--bg-color)] h-32 resize-none" placeholder="Descreva o plano anual..." required></textarea>
+                        <span class="form-error hidden text-red-500 text-xs mt-1 block" id="plano_anual-content-error"></span>
+                    </div>
+                    <div class="pt-4 flex justify-end space-x-2">
+                        <button type="button" class="btn-cancel-modal px-4 py-2 border rounded">Cancelar</button>
+                        <button type="submit" class="px-4 py-2 text-white bg-[var(--primary-color)] rounded">Atualizar Plano Anual</button>
+                    </div>
+                </form>
+
+                <form id="form-plano_mensal" class="space-y-4 hidden">
+                    <div>
+                        <label class="block text-sm font-semibold mb-1">Novo Plano Mensal</label>
+                        <textarea id="plano_mensal-content" class="w-full border border-[var(--border-color)] rounded p-2 bg-[var(--bg-color)] h-32 resize-none" placeholder="Descreva o plano mensal..." required></textarea>
+                        <span class="form-error hidden text-red-500 text-xs mt-1 block" id="plano_mensal-content-error"></span>
+                    </div>
+                    <div class="pt-4 flex justify-end space-x-2">
+                        <button type="button" class="btn-cancel-modal px-4 py-2 border rounded">Cancelar</button>
+                        <button type="submit" class="px-4 py-2 text-white bg-[var(--primary-color)] rounded">Atualizar Plano Mensal</button>
+                    </div>
+                </form>
+
+                <form id="form-plano_semanal" class="space-y-4 hidden">
+                    <div>
+                        <label class="block text-sm font-semibold mb-1">Novo Plano Semanal</label>
+                        <textarea id="plano_semanal-content" class="w-full border border-[var(--border-color)] rounded p-2 bg-[var(--bg-color)] h-32 resize-none" placeholder="Descreva o plano semanal..." required></textarea>
+                        <span class="form-error hidden text-red-500 text-xs mt-1 block" id="plano_semanal-content-error"></span>
+                    </div>
+                    <div class="pt-4 flex justify-end space-x-2">
+                        <button type="button" class="btn-cancel-modal px-4 py-2 border rounded">Cancelar</button>
+                        <button type="submit" class="px-4 py-2 text-white bg-[var(--primary-color)] rounded">Atualizar Plano Semanal</button>
+                    </div>
+                </form>
             </div>
         </div>
     </div>
 
-    <!-- Modal Global de VisualizaÃ§Ã£o -->
+    <!-- Modal Global de Visualização -->
     <div id="global-view-modal" class="fixed inset-0 bg-black bg-opacity-50 hidden z-50 flex items-center justify-center p-4">
         <div class="border border-[var(--border-color)] rounded-lg shadow-xl w-full max-w-md p-6 flex flex-col max-h-[90vh]" style="background-color: var(--bg-panel);">
             <div class="flex justify-between items-center mb-4 border-b border-[var(--border-color)] pb-3">
-                <h3 class="text-xl font-bold text-[var(--primary-color)]">VisualizaÃ§Ã£o</h3>
+                <h3 class="text-xl font-bold text-[var(--primary-color)]">Visualização</h3>
                 <button class="btn-close-view text-[var(--text-secondary)] font-bold text-xl">&times;</button>
             </div>
             <div class="flex-1 overflow-auto space-y-4">
@@ -561,102 +851,34 @@
             </div>
             <div id="manager-modal-list" class="flex-1 overflow-auto space-y-2"></div>
         </div>
-        </div>`n`n    <!-- View - Educacional Missão -->
-    <div id="view-missao-educacional" class="flex-1 overflow-auto p-6 max-w-7xl mx-auto w-full hidden flex-col h-full">
-        <div class="mb-8">
-            <button id="btn-voltar-missao" class="px-4 py-2 bg-gray-500 text-white rounded-lg font-semibold hover:bg-gray-600 transition-all flex items-center gap-2">
-                â† Voltar para Missão
-            </button>
-        </div>
-
-        <div class="space-y-8">
-            <section>
-                <h2 class="text-3xl font-bold text-[var(--primary-color)] mb-4">ðŸ“š O que Ã© uma Missão?</h2>
-                <p class="text-lg text-[var(--text-primary)] leading-relaxed">Uma Missão Ã© uma declaraÃ§Ã£o clara e concisa que define o <strong>propÃ³sito fundamental</strong> de sua vida ou negÃ³cio. Ela responde Ã  pergunta essencial: <em>"Por que eu existo?" ou "Para que eu trabalho?"</em></p>
-            </section>
-
-            <section class="bg-[var(--bg-panel)] p-6 rounded-lg border border-[var(--border-color)]">
-                <h3 class="text-2xl font-bold text-[var(--primary-color)] mb-4">âœ¨ CaracterÃ­sticas de uma Boa Missão</h3>
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div class="bg-blue-50 dark:bg-blue-950/20 p-4 rounded-lg border-l-4 border-blue-500">
-                        <h4 class="font-bold text-[var(--primary-color)] mb-1">Significativa</h4>
-                        <p class="text-sm text-[var(--text-secondary)]">Expressa valores e crenÃ§as profundas</p>
-                    </div>
-                    <div class="bg-blue-50 dark:bg-blue-950/20 p-4 rounded-lg border-l-4 border-blue-500">
-                        <h4 class="font-bold text-[var(--primary-color)] mb-1">Permanente</h4>
-                        <p class="text-sm text-[var(--text-secondary)]">NÃ£o muda facilmente, serve como Ã¢ncora</p>
-                    </div>
-                    <div class="bg-blue-50 dark:bg-blue-950/20 p-4 rounded-lg border-l-4 border-blue-500">
-                        <h4 class="font-bold text-[var(--primary-color)] mb-1">Inspiradora</h4>
-                        <p class="text-sm text-[var(--text-secondary)]">Motiva aÃ§Ãµes e decisÃµes diÃ¡rias</p>
-                    </div>
-                    <div class="bg-blue-50 dark:bg-blue-950/20 p-4 rounded-lg border-l-4 border-blue-500">
-                        <h4 class="font-bold text-[var(--primary-color)] mb-1">Concisa</h4>
-                        <p class="text-sm text-[var(--text-secondary)]">Clara o suficiente para ser memorizada</p>
-                    </div>
-                    <div class="bg-blue-50 dark:bg-blue-950/20 p-4 rounded-lg border-l-4 border-blue-500">
-                        <h4 class="font-bold text-[var(--primary-color)] mb-1">AutÃªntica</h4>
-                        <p class="text-sm text-[var(--text-secondary)]">Reflete quem vocÃª verdadeiramente Ã©</p>
-                    </div>
-                    <div class="bg-blue-50 dark:bg-blue-950/20 p-4 rounded-lg border-l-4 border-blue-500">
-                        <h4 class="font-bold text-[var(--primary-color)] mb-1">Abrangente</h4>
-                        <p class="text-sm text-[var(--text-secondary)]">Engloba diferentes aspectos da vida</p>
-                    </div>
-                </div>
-            </section>
-
-            <section class="bg-[var(--bg-panel)] p-6 rounded-lg border border-[var(--border-color)]">
-                <h3 class="text-2xl font-bold text-[var(--primary-color)] mb-6">ðŸ”„ DiferenÃ§as Importantes</h3>
-                <div class="space-y-4">
-                    <div class="border-l-4 border-green-500 pl-4">
-                        <h4 class="font-bold text-[var(--primary-color)] mb-2">Missão vs Visão</h4>
-                        <p class="text-[var(--text-primary)]">A <em>Missão</em> Ã© o propÃ³sito presente (<strong>por que faÃ§o</strong>), enquanto a <em>Visão</em> Ã© o futuro desejado (<strong>aonde quero chegar</strong>)</p>
-                    </div>
-                    <div class="border-l-4 border-green-500 pl-4">
-                        <h4 class="font-bold text-[var(--primary-color)] mb-2">Missão vs Metas</h4>
-                        <p class="text-[var(--text-primary)]">A <em>Missão</em> Ã© permanente e atemporal, enquanto as <em>Metas</em> sÃ£o especÃ­ficas, mensurÃ¡veis e com prazo</p>
-                    </div>
-                </div>
-            </section>
-
-            <section class="bg-[var(--bg-panel)] p-6 rounded-lg border border-[var(--border-color)]">
-                <h3 class="text-2xl font-bold text-[var(--primary-color)] mb-6">ðŸ’¼ Exemplos PrÃ¡ticos</h3>
-                <div class="space-y-4">
-                    <div class="bg-amber-50 dark:bg-amber-950/20 p-4 rounded-lg">
-                        <h4 class="font-bold text-amber-900 dark:text-amber-300 mb-2">ðŸ“Œ Pessoal</h4>
-                        <p class="italic text-[var(--text-secondary)]">"Impactar positivamente a vida das pessoas ao meu redor atravÃ©s de aÃ§Ãµes de integridade, empatia e excelÃªncia"</p>
-                    </div>
-                    <div class="bg-purple-50 dark:bg-purple-950/20 p-4 rounded-lg">
-                        <h4 class="font-bold text-purple-900 dark:text-purple-300 mb-2">ðŸ’» Profissional</h4>
-                        <p class="italic text-[var(--text-secondary)]">"Desenvolver soluÃ§Ãµes inovadoras que simplificam a vida das pessoas"</p>
-                    </div>
-                    <div class="bg-red-50 dark:bg-red-950/20 p-4 rounded-lg">
-                        <h4 class="font-bold text-red-900 dark:text-red-300 mb-2">ðŸ¢ Empresarial (Apple)</h4>
-                        <p class="italic text-[var(--text-secondary)]">"Conectar tecnologia, humanidade e artes"</p>
-                    </div>
-                </div>
-            </section>
-
-            <section class="bg-[var(--bg-panel)] p-6 rounded-lg border border-[var(--border-color)]">
-                <h3 class="text-2xl font-bold text-[var(--primary-color)] mb-4">ðŸ”„ Por que Revisar sua Missão?</h3>
-                <p class="text-[var(--text-primary)] leading-relaxed">Sua Missão nÃ£o precisa mudar frequentemente, mas deve ser revisada periodicamente para garantir que ainda representa quem vocÃª Ã© e o que realmente importa. Este planejador permite que vocÃª mantenha um histÃ³rico de suas missÃµes, capturando sua evoluÃ§Ã£o ao longo do tempo.</p>
-            </section>
-
-            <section class="bg-gradient-to-br from-yellow-50 to-amber-50 dark:from-yellow-950/30 dark:to-amber-950/30 p-6 rounded-lg border-2 border-yellow-400 dark:border-yellow-700">
-                <h4 class="text-xl font-bold text-yellow-900 dark:text-yellow-300 mb-3 flex items-center gap-2">
-                    ðŸ’¡ Dica PrÃ¡tica
-                </h4>
-                <p class="text-[var(--text-primary)] leading-relaxed">Escreva sua Missão como se fosse para um pÃºblico amplo, mas que refletisse profundamente seus valores. Releia-a frequentemente e atualize quando sentir que evoluiu como pessoa.</p>
-            </section>
-        </div>
-
-        <div class="mt-12 flex justify-start">
-            <button id="btn-voltar-missao-bottom" class="px-6 py-3 bg-gray-500 text-white rounded-lg font-semibold hover:bg-gray-600 transition-all flex items-center gap-2">
-                â† Voltar para Missão
-            </button>
-        </div>
     </div>
 
+    <!-- Modal Global de Transferência de Atividades -->
+    <div id="global-transfer-modal" class="fixed inset-0 bg-black bg-opacity-50 hidden z-50 flex items-center justify-center p-4">
+        <div class="border border-[var(--border-color)] rounded-lg shadow-xl w-full max-w-md p-6 flex flex-col max-h-[90vh]" style="background-color: var(--bg-panel);">
+            <div class="flex justify-between items-center mb-4 border-b border-[var(--border-color)] pb-3">
+                <h3 class="text-xl font-bold text-[var(--primary-color)]">🔄 Transferir Atividade</h3>
+                <button class="btn-close-transfer text-[var(--text-secondary)] hover:text-[var(--text-primary)] font-bold text-xl">&times;</button>
+            </div>
+            <div class="flex-1 overflow-auto space-y-4">
+                <div>
+                    <label class="block text-sm font-semibold text-[var(--text-primary)] mb-2">Transferir para:</label>
+                    <select id="transfer-destino" class="w-full border border-[var(--border-color)] rounded p-2 bg-[var(--bg-color)] text-sm">
+                        <option value="">-- Selecione --</option>
+                        <option value="dia">Um dia específico</option>
+                        <option value="plano-anual">Plano Anual</option>
+                        <option value="plano-mensal">Plano Mensal</option>
+                        <option value="plano-semanal">Plano Semanal</option>
+                    </select>
+                </div>
+                <div id="transfer-options"></div>
+            </div>
+            <div class="pt-4 flex justify-end space-x-2 border-t border-[var(--border-color)] mt-4">
+                <button id="btn-transfer-cancel" class="px-4 py-2 border rounded">Cancelar</button>
+                <button id="btn-transfer-confirm" class="px-4 py-2 text-white bg-[var(--primary-color)] rounded">Confirmar Transferência</button>
+            </div>
+        </div>
+    </div>
     <script src="js/services/StorageService.js"></script>
     <script src="js/services/ThemeService.js"></script>
     <script src="js/services/I18nService.js"></script>

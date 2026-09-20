@@ -2,9 +2,6 @@
 
 // Importar módulos de CRUD
 import { CRUDModal } from './modules/crudModal.js';
-import { FormMappers } from './modules/formMappers.js';
-import { FormValidators } from './modules/formValidators.js';
-import { FormLoaders } from './modules/formLoaders.js';
 
 document.addEventListener('DOMContentLoaded', async () => {
     // 1. Inicializar Tema e Acessibilidade

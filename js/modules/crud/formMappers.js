@@ -114,61 +114,61 @@ export const FORM_REGISTRY = {
   missao: {
     storageKey: 'planner_strategies',
     formId: 'form-missao',
-    fields: ['id', 'createdAt', 'tipo', 'conteudo', 'definido_em'],
+    fields: ['id', 'createdAt', 'content'],
     titles: { create: 'Definir Missão', edit: 'Editar Missão' },
-    requires: ['conteudo'],
-    defaults: { tipo: 'missao' },
+    requires: ['content'],
+    defaults: { type: 'missao' },
     selfManaged: true // Gerenciado manualmente em app.js
   },
 
   visao: {
     storageKey: 'planner_strategies',
     formId: 'form-visao',
-    fields: ['id', 'createdAt', 'tipo', 'conteudo', 'definido_em'],
+    fields: ['id', 'createdAt', 'content'],
     titles: { create: 'Definir Visão', edit: 'Editar Visão' },
-    requires: ['conteudo'],
-    defaults: { tipo: 'visao' },
+    requires: ['content'],
+    defaults: { type: 'visao' },
     selfManaged: true // Gerenciado manualmente em app.js
   },
 
   objetivos: {
-    storageKey: 'planner_objectives',
+    storageKey: 'planner_strategies',
     formId: 'form-objetivos',
-    fields: ['id', 'createdAt', 'prazo', 'titulo', 'descricao', 'status', 'definido_em'],
+    fields: ['id', 'createdAt', 'prazo', 'content'],
     titles: { create: 'Novo Objetivo', edit: 'Editar Objetivo' },
-    requires: ['prazo', 'titulo'],
-    defaults: { status: 'ativo' },
+    requires: ['prazo', 'content'],
+    defaults: {},
     selfManaged: true // Gerenciado manualmente em app.js
   },
 
   // ==================== NÍVEL TÁTICO ====================
   plano_anual: {
-    storageKey: 'planner_plans',
+    storageKey: 'planner_strategies',
     formId: 'form-plano_anual',
-    fields: ['id', 'createdAt', 'tipo', 'periodo', 'conteudo', 'definido_em'],
+    fields: ['id', 'createdAt', 'content'],
     titles: { create: 'Definir Plano Anual', edit: 'Editar Plano Anual' },
-    requires: ['conteudo'],
-    defaults: { tipo: 'plano_anual' },
+    requires: ['content'],
+    defaults: { type: 'plano_anual' },
     selfManaged: true // Gerenciado manualmente em app.js
   },
 
   plano_mensal: {
-    storageKey: 'planner_plans',
+    storageKey: 'planner_strategies',
     formId: 'form-plano_mensal',
-    fields: ['id', 'createdAt', 'tipo', 'periodo', 'conteudo', 'definido_em'],
+    fields: ['id', 'createdAt', 'content'],
     titles: { create: 'Definir Plano Mensal', edit: 'Editar Plano Mensal' },
-    requires: ['conteudo'],
-    defaults: { tipo: 'plano_mensal' },
+    requires: ['content'],
+    defaults: { type: 'plano_mensal' },
     selfManaged: true // Gerenciado manualmente em app.js
   },
 
   plano_semanal: {
-    storageKey: 'planner_plans',
+    storageKey: 'planner_strategies',
     formId: 'form-plano_semanal',
-    fields: ['id', 'createdAt', 'tipo', 'periodo', 'conteudo', 'definido_em'],
+    fields: ['id', 'createdAt', 'content'],
     titles: { create: 'Definir Plano Semanal', edit: 'Editar Plano Semanal' },
-    requires: ['conteudo'],
-    defaults: { tipo: 'plano_semanal' },
+    requires: ['content'],
+    defaults: { type: 'plano_semanal' },
     selfManaged: true // Gerenciado manualmente em app.js
   }
 };
