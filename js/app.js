@@ -479,271 +479,6 @@ document.addEventListener('DOMContentLoaded', async () => {
         }
     }
 
-    // Renderiza o esquema "texto único versionado" (atual + histórico) compartilhado
-    // entre todos os Planos (Anual, Mensal e Semanal).
-    // Deriva a chave do período (ano, mês ou semana) a partir de um timestamp.
-    // Semana usa o mesmo cálculo (domingo-sábado) de getWeekNumber()/getWeekDates(),
-    // reaproveitado pelo header-week-tabs, para não ter duas numerações de semana no app.
-    function getPeriodoKey(timestamp, granularidade) {
-        const d = new Date(timestamp);
-        if (granularidade === 'mes') {
-            return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
-        }
-        if (granularidade === 'semana') {
-            const sunday = getWeekDates(d)[0];
-            const weekNum = getWeekNumber(sunday);
-            return `${sunday.getFullYear()}-w${String(weekNum).padStart(2, '0')}`;
-        }
-        return String(d.getFullYear());
-    }
-
-    // Rótulo legível do período, ex.: "2026", "Setembro de 2026" ou "Semana 38 de 2026".
-    function getPeriodoLabel(key, granularidade) {
-        if (granularidade === 'mes') {
-            const [ano, mes] = key.split('-');
-            const nome = new Date(Number(ano), Number(mes) - 1, 1).toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' });
-            return nome.charAt(0).toUpperCase() + nome.slice(1);
-        }
-        if (granularidade === 'semana') {
-            const [ano, wpart] = key.split('-w');
-            return `Semana ${Number(wpart)} de ${ano}`;
-        }
-        return key;
-    }
-
-    // Deriva a chave de ano e de mês a partir de uma chave de semana (ex.: "2026-w38"),
-    // usada pelo breadcrumb de período para saber a que ano/mês uma semana pertence.
-    function getPeriodoPaiKeys(semanaKey) {
-        const [anoStr, wpart] = semanaKey.split('-w');
-        const weekNum = Number(wpart);
-        // Aproxima a data do domingo daquela semana ISO-like a partir do 1º de janeiro
-        const jan1 = new Date(Number(anoStr), 0, 1);
-        const approxSunday = new Date(jan1);
-        approxSunday.setDate(jan1.getDate() + (weekNum - 1) * 7 - jan1.getDay());
-        return {
-            ano: getPeriodoKey(approxSunday.getTime(), 'ano'),
-            mes: getPeriodoKey(approxSunday.getTime(), 'mes')
-        };
-    }
-
-    // Todas as chaves de semana (domingo-sábado) que tocam um mês, na ordem em que ocorrem.
-    function getSemanasDoMes(mesKey) {
-        const [ano, mes] = mesKey.split('-').map(Number);
-        const primeiroDia = new Date(ano, mes - 1, 1);
-        const ultimoDia = new Date(ano, mes, 0);
-        const semanas = [];
-        const vistos = new Set();
-        const d = new Date(primeiroDia);
-        while (d <= ultimoDia) {
-            const key = getPeriodoKey(d.getTime(), 'semana');
-            if (!vistos.has(key)) {
-                vistos.add(key);
-                semanas.push(key);
-            }
-            d.setDate(d.getDate() + 1);
-        }
-        return semanas;
-    }
-
-    // Breadcrumb de navegação Ano › Mês › Semana no cabeçalho, compartilhado pelos 3
-    // Planos. Cada segmento abre um dropdown com as opções irmãs daquele nível; clicar
-    // numa opção navega direto para o Plano correspondente (anual/mensal/semanal) já
-    // com aquele período selecionado. Em telas estreitas os 3 segmentos colapsam num
-    // único botão que abre os três níveis empilhados.
-    // Rótulo compacto de semana para caber no breadcrumb do cabeçalho: "Sem. 38" (sem o ano,
-    // que já aparece no primeiro segmento do breadcrumb).
-    function semanaLabelCompacto(semanaKey) {
-        return `Sem. ${Number(semanaKey.split('-w')[1])}`;
-    }
-
-    // Container fixo para os dropdowns do breadcrumb, anexado direto ao <body>.
-    // Necessário porque header-periodo-buttons vive dentro de uma div com
-    // overflow-x-auto no cabeçalho — overflow-x diferente de "visible" faz o
-    // navegador tratar overflow-y como "auto" também (regra do spec CSS), cortando
-    // qualquer <div class="absolute"> filha antes que ela consiga aparecer.
-    function getPeriodoDropdownRoot() {
-        let root = document.getElementById('periodo-dropdown-root');
-        if (!root) {
-            root = document.createElement('div');
-            root.id = 'periodo-dropdown-root';
-            document.body.appendChild(root);
-        }
-        return root;
-    }
-
-    async function renderPeriodoBreadcrumb(tipoAtivo, periodoSelecionado, granularidadeAtiva) {
-        const container = document.getElementById('header-periodo-buttons');
-        if (!container) return;
-
-        const now = Date.now();
-        let anoKey, mesKey, semanaKey;
-        if (granularidadeAtiva === 'ano') {
-            anoKey = periodoSelecionado;
-            mesKey = getPeriodoKey(now, 'mes');
-            semanaKey = getPeriodoKey(now, 'semana');
-        } else if (granularidadeAtiva === 'mes') {
-            anoKey = periodoSelecionado.split('-')[0];
-            mesKey = periodoSelecionado;
-            semanaKey = getPeriodoKey(now, 'semana');
-        } else {
-            const pais = getPeriodoPaiKeys(periodoSelecionado);
-            anoKey = pais.ano;
-            mesKey = pais.mes;
-            semanaKey = periodoSelecionado;
-        }
-
-        const strategies = await StorageService.get('planner_strategies') || [];
-        const anosComDados = new Set([getPeriodoKey(now, 'ano')]);
-        const mesesComDados = new Set();
-        const semanasComDados = new Set();
-        strategies.forEach(s => {
-            if (!['plano_anual', 'plano_mensal', 'plano_semanal'].includes(s.type)) return;
-            anosComDados.add(getPeriodoKey(s.timestamp, 'ano'));
-            mesesComDados.add(getPeriodoKey(s.timestamp, 'mes'));
-            semanasComDados.add(getPeriodoKey(s.timestamp, 'semana'));
-        });
-        anosComDados.add(anoKey);
-
-        const anos = Array.from(anosComDados).sort().reverse();
-        const meses = Array.from({ length: 12 }, (_, i) => `${anoKey}-${String(i + 1).padStart(2, '0')}`);
-        const semanas = getSemanasDoMes(mesKey);
-
-        const anoAtualKey = getPeriodoKey(now, 'ano');
-        const mesAtualKey = getPeriodoKey(now, 'mes');
-        const semanaAtualKey = getPeriodoKey(now, 'semana');
-
-        const optHtml = (key, ativo, atual, texto, temDado) => `
-            <button class="periodo-opt w-full text-left px-3 py-1.5 rounded text-sm transition-colors ${
-                ativo ? 'bg-[var(--primary-color)] text-white font-semibold' : 'hover:bg-[var(--border-color)] text-[var(--text-primary)]'
-            } ${!ativo && !temDado ? 'opacity-50' : ''}" data-periodo="${key}">
-                ${texto}${atual ? ' <span class="text-xs opacity-75">(atual)</span>' : ''}
-            </button>
-        `;
-
-        const anoOptions = anos.map(k => optHtml(k, k === anoKey, k === anoAtualKey, k, true)).join('');
-        const mesOptions = meses.map(k => optHtml(k, k === mesKey, k === mesAtualKey, getPeriodoLabel(k, 'mes'), mesesComDados.has(k))).join('');
-        const semanaOptions = semanas.map(k => optHtml(k, k === semanaKey, k === semanaAtualKey, semanaLabelCompacto(k), semanasComDados.has(k))).join('');
-
-        const crumb = (nivel, texto, ativo) => `
-            <button class="crumb-btn px-2 py-1 rounded text-sm font-semibold transition-colors ${
-                ativo ? 'bg-[var(--border-color)] text-[var(--primary-color)]' : 'text-[var(--text-secondary)] hover:bg-[var(--border-color)]'
-            }" data-nivel="${nivel}">${texto}</button>
-        `;
-
-        container.innerHTML = `
-            <div class="flex items-center gap-0.5" id="breadcrumb-desktop">
-                ${crumb('ano', anoKey, granularidadeAtiva === 'ano')}
-                <span class="text-[var(--text-secondary)] text-xs">›</span>
-                ${crumb('mes', getPeriodoLabel(mesKey, 'mes').split(' de ')[0].slice(0, 3), granularidadeAtiva === 'mes')}
-                <span class="text-[var(--text-secondary)] text-xs">›</span>
-                ${crumb('semana', semanaLabelCompacto(semanaKey), granularidadeAtiva === 'semana')}
-            </div>
-            <button id="breadcrumb-mobile-trigger" class="hidden items-center gap-1 px-2 py-1 rounded text-sm font-semibold text-[var(--text-secondary)] hover:bg-[var(--border-color)]">
-                <span>${getPeriodoLabel(mesKey, 'mes').split(' de ')[0].slice(0, 3)} ${anoKey} · ${semanaLabelCompacto(semanaKey)}</span>
-                <span class="text-xs">▾</span>
-            </button>
-        `;
-
-        // Breakpoint md do Tailwind local (768px) — decide breadcrumb completo vs. botão colapsado.
-        const isDesktop = window.innerWidth >= 768;
-        container.querySelector('#breadcrumb-desktop').classList.toggle('hidden', !isDesktop);
-        const mobileTrigger = container.querySelector('#breadcrumb-mobile-trigger');
-        mobileTrigger.classList.toggle('hidden', isDesktop);
-        mobileTrigger.classList.toggle('flex', !isDesktop);
-
-        // Dropdowns/painel vivem fora do cabeçalho (ver getPeriodoDropdownRoot) para
-        // escapar do overflow-x-auto do container central do header.
-        const dropdownRoot = getPeriodoDropdownRoot();
-        dropdownRoot.innerHTML = `
-            <div class="periodo-dropdown hidden fixed bg-[var(--bg-panel)] border border-[var(--border-color)] rounded-lg shadow-lg py-1 min-w-[160px] max-h-64 overflow-auto z-50" data-dropdown="ano">${anoOptions}</div>
-            <div class="periodo-dropdown hidden fixed bg-[var(--bg-panel)] border border-[var(--border-color)] rounded-lg shadow-lg py-1 min-w-[160px] max-h-64 overflow-auto z-50" data-dropdown="mes">${mesOptions}</div>
-            <div class="periodo-dropdown hidden fixed bg-[var(--bg-panel)] border border-[var(--border-color)] rounded-lg shadow-lg py-1 min-w-[160px] max-h-64 overflow-auto z-50" data-dropdown="semana">${semanaOptions}</div>
-            <div id="breadcrumb-mobile-panel" class="hidden fixed bg-[var(--bg-panel)] border border-[var(--border-color)] rounded-lg shadow-lg p-3 w-72 z-50 space-y-3">
-                <div>
-                    <p class="text-xs text-[var(--text-secondary)] font-semibold mb-1 uppercase">Ano</p>
-                    <div class="flex flex-wrap gap-1">${anos.map(k => `<button class="periodo-opt px-3 py-1 rounded-full text-xs border border-[var(--border-color)] ${k === anoKey ? 'bg-[var(--primary-color)] text-white' : ''}" data-periodo="${k}">${k}</button>`).join('')}</div>
-                </div>
-                <div>
-                    <p class="text-xs text-[var(--text-secondary)] font-semibold mb-1 uppercase">Mês</p>
-                    <div class="flex flex-wrap gap-1">${meses.map(k => `<button class="periodo-opt px-3 py-1 rounded-full text-xs border border-[var(--border-color)] ${k === mesKey ? 'bg-[var(--primary-color)] text-white' : ''} ${!mesesComDados.has(k) && k !== mesAtualKey ? 'opacity-50' : ''}" data-periodo="${k}">${getPeriodoLabel(k, 'mes').split(' de ')[0].slice(0, 3)}</button>`).join('')}</div>
-                </div>
-                <div>
-                    <p class="text-xs text-[var(--text-secondary)] font-semibold mb-1 uppercase">Semana</p>
-                    <div class="flex flex-wrap gap-1">${semanas.map(k => `<button class="periodo-opt px-3 py-1 rounded-full text-xs border border-[var(--border-color)] ${k === semanaKey ? 'bg-[var(--primary-color)] text-white' : ''} ${!semanasComDados.has(k) && k !== semanaAtualKey ? 'opacity-50' : ''}" data-periodo="${k}">${semanaLabelCompacto(k)}</button>`).join('')}</div>
-                </div>
-            </div>
-        `;
-
-        const fecharDropdowns = () => {
-            dropdownRoot.querySelectorAll('.periodo-dropdown, #breadcrumb-mobile-panel').forEach(d => d.classList.add('hidden'));
-        };
-
-        // Chamado com o elemento já visível (classe "hidden" removida) para poder medir
-        // offsetWidth de verdade; clampa dentro da viewport com 8px de margem mínima
-        // para não deixar o painel cortado em telas estreitas.
-        const posicionarSobre = (el, anchorRect) => {
-            el.style.top = `${anchorRect.bottom + 4}px`;
-            el.style.left = `${anchorRect.left}px`;
-            el.style.right = 'auto';
-            const rect = el.getBoundingClientRect();
-            const margem = 8;
-            if (rect.right > window.innerWidth - margem) {
-                el.style.left = `${Math.max(margem, window.innerWidth - margem - rect.width)}px`;
-            }
-        };
-
-        container.querySelectorAll('.crumb-btn').forEach(btn => {
-            btn.addEventListener('click', (e) => {
-                e.stopPropagation();
-                const nivel = btn.dataset.nivel;
-                const dropdown = dropdownRoot.querySelector(`.periodo-dropdown[data-dropdown="${nivel}"]`);
-                const estavaAberto = !dropdown.classList.contains('hidden');
-                fecharDropdowns();
-                if (!estavaAberto) {
-                    const anchorRect = btn.getBoundingClientRect();
-                    dropdown.classList.remove('hidden');
-                    posicionarSobre(dropdown, anchorRect);
-                }
-            });
-        });
-
-        mobileTrigger.addEventListener('click', (e) => {
-            e.stopPropagation();
-            const panel = dropdownRoot.querySelector('#breadcrumb-mobile-panel');
-            const estavaAberto = !panel.classList.contains('hidden');
-            fecharDropdowns();
-            if (!estavaAberto) {
-                const anchorRect = mobileTrigger.getBoundingClientRect();
-                panel.classList.remove('hidden');
-                posicionarSobre(panel, anchorRect);
-            }
-        });
-
-        dropdownRoot.querySelectorAll('.periodo-opt').forEach(opt => {
-            opt.addEventListener('click', (e) => {
-                e.stopPropagation();
-                const key = opt.dataset.periodo;
-                if (key.includes('-w')) {
-                    window.appRouter.switchToPlanosView('semanal', key);
-                } else if (key.includes('-')) {
-                    window.appRouter.switchToPlanosView('mensal', key);
-                } else {
-                    window.appRouter.switchToPlanosView('anual', key);
-                }
-            });
-        });
-
-        if (!window.__breadcrumbOutsideClickAttached) {
-            document.addEventListener('click', () => {
-                document.querySelectorAll('.periodo-dropdown, #breadcrumb-mobile-panel').forEach(d => d.classList.add('hidden'));
-            });
-            window.addEventListener('resize', () => {
-                document.querySelectorAll('.periodo-dropdown, #breadcrumb-mobile-panel').forEach(d => d.classList.add('hidden'));
-            });
-            window.__breadcrumbOutsideClickAttached = true;
-        }
-    }
-
     // Renderiza o esquema "texto único versionado" com navegação por período (ano/mês):
     // o período atual fica ativo/editável; períodos anteriores aparecem como botões
     // cinza/inativos numa barra superior e são somente leitura.
@@ -771,7 +506,15 @@ document.addEventListener('DOMContentLoaded', async () => {
         const isPeriodoAtual = periodoSelecionado === periodoAtualKey;
 
         // Renderizar breadcrumb de navegação Ano › Mês › Semana no cabeçalho
-        await renderPeriodoBreadcrumb(tipo, periodoSelecionado, granularidade);
+        await renderPeriodoBreadcrumb(periodoSelecionado, granularidade, (key) => {
+            if (key.includes('-w')) {
+                window.appRouter.switchToPlanosView('semanal', key);
+            } else if (key.includes('-')) {
+                window.appRouter.switchToPlanosView('mensal', key);
+            } else {
+                window.appRouter.switchToPlanosView('anual', key);
+            }
+        });
 
         const registrosDoPeriodo = grupos[periodoSelecionado].sort((a, b) => b.timestamp - a.timestamp);
 
@@ -2552,6 +2295,284 @@ function renderDailyView(date) {
     document.getElementById('daily-view-title').textContent = titleStr;
 }
 
+// Renderiza o esquema "texto único versionado" (atual + histórico) compartilhado
+// entre todos os Planos (Anual, Mensal e Semanal).
+// Deriva a chave do período (ano, mês ou semana) a partir de um timestamp.
+// Semana usa o mesmo cálculo (domingo-sábado) de getWeekNumber()/getWeekDates(),
+// reaproveitado pelo header-week-tabs, para não ter duas numerações de semana no app.
+function getPeriodoKey(timestamp, granularidade) {
+    const d = new Date(timestamp);
+    if (granularidade === 'mes') {
+        return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+    }
+    if (granularidade === 'semana') {
+        const sunday = getWeekDates(d)[0];
+        const weekNum = getWeekNumber(sunday);
+        return `${sunday.getFullYear()}-w${String(weekNum).padStart(2, '0')}`;
+    }
+    return String(d.getFullYear());
+}
+
+// Rótulo legível do período, ex.: "2026", "Setembro de 2026" ou "Semana 38 de 2026".
+function getPeriodoLabel(key, granularidade) {
+    if (granularidade === 'mes') {
+        const [ano, mes] = key.split('-');
+        const nome = new Date(Number(ano), Number(mes) - 1, 1).toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' });
+        return nome.charAt(0).toUpperCase() + nome.slice(1);
+    }
+    if (granularidade === 'semana') {
+        const [ano, wpart] = key.split('-w');
+        return `Semana ${Number(wpart)} de ${ano}`;
+    }
+    return key;
+}
+
+// Deriva a chave de ano e de mês a partir de uma chave de semana (ex.: "2026-w38"),
+// usada pelo breadcrumb de período para saber a que ano/mês uma semana pertence.
+// Domingo (início) da semana representada por uma chave "2026-w38", aproximado a
+// partir do 1º de janeiro — mesmo esquema de contagem de getWeekNumber().
+function getDataDaSemana(semanaKey) {
+    const [anoStr, wpart] = semanaKey.split('-w');
+    const weekNum = Number(wpart);
+    const jan1 = new Date(Number(anoStr), 0, 1);
+    const sunday = new Date(jan1);
+    sunday.setDate(jan1.getDate() + (weekNum - 1) * 7 - jan1.getDay());
+    return sunday;
+}
+
+function getPeriodoPaiKeys(semanaKey) {
+    const sunday = getDataDaSemana(semanaKey);
+    return {
+        ano: getPeriodoKey(sunday.getTime(), 'ano'),
+        mes: getPeriodoKey(sunday.getTime(), 'mes')
+    };
+}
+
+// Todas as chaves de semana (domingo-sábado) que tocam um mês, na ordem em que ocorrem.
+function getSemanasDoMes(mesKey) {
+    const [ano, mes] = mesKey.split('-').map(Number);
+    const primeiroDia = new Date(ano, mes - 1, 1);
+    const ultimoDia = new Date(ano, mes, 0);
+    const semanas = [];
+    const vistos = new Set();
+    const d = new Date(primeiroDia);
+    while (d <= ultimoDia) {
+        const key = getPeriodoKey(d.getTime(), 'semana');
+        if (!vistos.has(key)) {
+            vistos.add(key);
+            semanas.push(key);
+        }
+        d.setDate(d.getDate() + 1);
+    }
+    return semanas;
+}
+
+// Breadcrumb de navegação Ano › Mês › Semana no cabeçalho, compartilhado pelos 3
+// Planos. Cada segmento abre um dropdown com as opções irmãs daquele nível; clicar
+// numa opção navega direto para o Plano correspondente (anual/mensal/semanal) já
+// com aquele período selecionado. Em telas estreitas os 3 segmentos colapsam num
+// único botão que abre os três níveis empilhados.
+// Rótulo compacto de semana para caber no breadcrumb do cabeçalho: "Sem. 38" (sem o ano,
+// que já aparece no primeiro segmento do breadcrumb).
+// Rótulo curto para o mobile-trigger, onde o espaço é realmente apertado.
+function semanaLabelCompacto(semanaKey) {
+    return `Sem. ${Number(semanaKey.split('-w')[1])}`;
+}
+
+// Rótulo completo sem o ano (que já aparece no primeiro segmento do breadcrumb) —
+// usado no crumb principal e nos dropdowns do desktop, onde há espaço de sobra.
+function semanaLabelSemAno(semanaKey) {
+    return `Semana ${Number(semanaKey.split('-w')[1])}`;
+}
+
+// Container fixo para os dropdowns do breadcrumb, anexado direto ao <body>.
+// Necessário porque header-periodo-buttons vive dentro de uma div com
+// overflow-x-auto no cabeçalho — overflow-x diferente de "visible" faz o
+// navegador tratar overflow-y como "auto" também (regra do spec CSS), cortando
+// qualquer <div class="absolute"> filha antes que ela consiga aparecer.
+function getPeriodoDropdownRoot() {
+    let root = document.getElementById('periodo-dropdown-root');
+    if (!root) {
+        root = document.createElement('div');
+        root.id = 'periodo-dropdown-root';
+        document.body.appendChild(root);
+    }
+    return root;
+}
+
+// onSelecionar(key) decide o que fazer quando uma opção do dropdown é clicada —
+// nas páginas de Plano isso navega para o Plano correspondente naquele período;
+// no Dashboard (Meu Planner) isso troca a semana exibida sem sair da tela.
+async function renderPeriodoBreadcrumb(periodoSelecionado, granularidadeAtiva, onSelecionar) {
+    const container = document.getElementById('header-periodo-buttons');
+    if (!container) return;
+
+    const now = Date.now();
+    let anoKey, mesKey, semanaKey;
+    if (granularidadeAtiva === 'ano') {
+        anoKey = periodoSelecionado;
+        mesKey = getPeriodoKey(now, 'mes');
+        semanaKey = getPeriodoKey(now, 'semana');
+    } else if (granularidadeAtiva === 'mes') {
+        anoKey = periodoSelecionado.split('-')[0];
+        mesKey = periodoSelecionado;
+        semanaKey = getPeriodoKey(now, 'semana');
+    } else {
+        const pais = getPeriodoPaiKeys(periodoSelecionado);
+        anoKey = pais.ano;
+        mesKey = pais.mes;
+        semanaKey = periodoSelecionado;
+    }
+
+    const strategies = await StorageService.get('planner_strategies') || [];
+    const anosComDados = new Set([getPeriodoKey(now, 'ano')]);
+    const mesesComDados = new Set();
+    const semanasComDados = new Set();
+    strategies.forEach(s => {
+        if (!['plano_anual', 'plano_mensal', 'plano_semanal'].includes(s.type)) return;
+        anosComDados.add(getPeriodoKey(s.timestamp, 'ano'));
+        mesesComDados.add(getPeriodoKey(s.timestamp, 'mes'));
+        semanasComDados.add(getPeriodoKey(s.timestamp, 'semana'));
+    });
+    anosComDados.add(anoKey);
+
+    const anos = Array.from(anosComDados).sort().reverse();
+    const meses = Array.from({ length: 12 }, (_, i) => `${anoKey}-${String(i + 1).padStart(2, '0')}`);
+    const semanas = getSemanasDoMes(mesKey);
+
+    const anoAtualKey = getPeriodoKey(now, 'ano');
+    const mesAtualKey = getPeriodoKey(now, 'mes');
+    const semanaAtualKey = getPeriodoKey(now, 'semana');
+
+    const optHtml = (key, ativo, atual, texto, temDado) => `
+        <button class="periodo-opt w-full text-left px-3 py-1.5 rounded text-sm transition-colors ${
+            ativo ? 'bg-[var(--primary-color)] text-white font-semibold' : 'hover:bg-[var(--border-color)] text-[var(--text-primary)]'
+        } ${!ativo && !temDado ? 'opacity-50' : ''}" data-periodo="${key}">
+            ${texto}${atual ? ' <span class="text-xs opacity-75">(atual)</span>' : ''}
+        </button>
+    `;
+
+    const anoOptions = anos.map(k => optHtml(k, k === anoKey, k === anoAtualKey, k, true)).join('');
+    const mesOptions = meses.map(k => optHtml(k, k === mesKey, k === mesAtualKey, getPeriodoLabel(k, 'mes').split(' de ')[0], mesesComDados.has(k))).join('');
+    const semanaOptions = semanas.map(k => optHtml(k, k === semanaKey, k === semanaAtualKey, semanaLabelSemAno(k), semanasComDados.has(k))).join('');
+
+    // Cada nível é sempre um "botão" com borda visível (não só um link de texto),
+    // conforme feedback do usuário — o ativo ganha preenchimento sólido.
+    const crumb = (nivel, texto, ativo) => `
+        <button class="crumb-btn px-3 py-1.5 rounded-lg border text-sm font-semibold transition-colors ${
+            ativo
+                ? 'bg-[var(--primary-color)] text-white border-[var(--primary-color)]'
+                : 'border-[var(--border-color)] text-[var(--text-secondary)] hover:bg-[var(--border-color)]'
+        }" data-nivel="${nivel}">${texto}</button>
+    `;
+
+    container.innerHTML = `
+        <div class="flex items-center gap-1.5" id="breadcrumb-desktop">
+            ${crumb('ano', anoKey, granularidadeAtiva === 'ano')}
+            <span class="text-[var(--text-secondary)] text-xs">›</span>
+            ${crumb('mes', getPeriodoLabel(mesKey, 'mes').split(' de ')[0], granularidadeAtiva === 'mes')}
+            <span class="text-[var(--text-secondary)] text-xs">›</span>
+            ${crumb('semana', semanaLabelSemAno(semanaKey), granularidadeAtiva === 'semana')}
+        </div>
+        <button id="breadcrumb-mobile-trigger" class="hidden items-center gap-1 px-2 py-1 rounded text-sm font-semibold text-[var(--text-secondary)] hover:bg-[var(--border-color)]">
+            <span>${getPeriodoLabel(mesKey, 'mes').split(' de ')[0].slice(0, 3)} ${anoKey} · ${semanaLabelCompacto(semanaKey)}</span>
+            <span class="text-xs">▾</span>
+        </button>
+    `;
+
+    // Breakpoint md do Tailwind local (768px) — decide breadcrumb completo vs. botão colapsado.
+    const isDesktop = window.innerWidth >= 768;
+    container.querySelector('#breadcrumb-desktop').classList.toggle('hidden', !isDesktop);
+    const mobileTrigger = container.querySelector('#breadcrumb-mobile-trigger');
+    mobileTrigger.classList.toggle('hidden', isDesktop);
+    mobileTrigger.classList.toggle('flex', !isDesktop);
+
+    // Dropdowns/painel vivem fora do cabeçalho (ver getPeriodoDropdownRoot) para
+    // escapar do overflow-x-auto do container central do header.
+    const dropdownRoot = getPeriodoDropdownRoot();
+    dropdownRoot.innerHTML = `
+        <div class="periodo-dropdown hidden fixed bg-[var(--bg-panel)] border border-[var(--border-color)] rounded-lg shadow-lg py-1 min-w-[160px] max-h-64 overflow-auto z-50" data-dropdown="ano">${anoOptions}</div>
+        <div class="periodo-dropdown hidden fixed bg-[var(--bg-panel)] border border-[var(--border-color)] rounded-lg shadow-lg py-1 min-w-[160px] max-h-64 overflow-auto z-50" data-dropdown="mes">${mesOptions}</div>
+        <div class="periodo-dropdown hidden fixed bg-[var(--bg-panel)] border border-[var(--border-color)] rounded-lg shadow-lg py-1 min-w-[160px] max-h-64 overflow-auto z-50" data-dropdown="semana">${semanaOptions}</div>
+        <div id="breadcrumb-mobile-panel" class="hidden fixed bg-[var(--bg-panel)] border border-[var(--border-color)] rounded-lg shadow-lg p-3 w-72 z-50 space-y-3">
+            <div>
+                <p class="text-xs text-[var(--text-secondary)] font-semibold mb-1 uppercase">Ano</p>
+                <div class="flex flex-wrap gap-1">${anos.map(k => `<button class="periodo-opt px-3 py-1 rounded-full text-xs border border-[var(--border-color)] ${k === anoKey ? 'bg-[var(--primary-color)] text-white' : ''}" data-periodo="${k}">${k}</button>`).join('')}</div>
+            </div>
+            <div>
+                <p class="text-xs text-[var(--text-secondary)] font-semibold mb-1 uppercase">Mês</p>
+                <div class="flex flex-wrap gap-1">${meses.map(k => `<button class="periodo-opt px-3 py-1 rounded-full text-xs border border-[var(--border-color)] ${k === mesKey ? 'bg-[var(--primary-color)] text-white' : ''} ${!mesesComDados.has(k) && k !== mesAtualKey ? 'opacity-50' : ''}" data-periodo="${k}">${getPeriodoLabel(k, 'mes').split(' de ')[0].slice(0, 3)}</button>`).join('')}</div>
+            </div>
+            <div>
+                <p class="text-xs text-[var(--text-secondary)] font-semibold mb-1 uppercase">Semana</p>
+                <div class="flex flex-wrap gap-1">${semanas.map(k => `<button class="periodo-opt px-3 py-1 rounded-full text-xs border border-[var(--border-color)] ${k === semanaKey ? 'bg-[var(--primary-color)] text-white' : ''} ${!semanasComDados.has(k) && k !== semanaAtualKey ? 'opacity-50' : ''}" data-periodo="${k}">${semanaLabelCompacto(k)}</button>`).join('')}</div>
+            </div>
+        </div>
+    `;
+
+    const fecharDropdowns = () => {
+        dropdownRoot.querySelectorAll('.periodo-dropdown, #breadcrumb-mobile-panel').forEach(d => d.classList.add('hidden'));
+    };
+
+    // Chamado com o elemento já visível (classe "hidden" removida) para poder medir
+    // offsetWidth de verdade; clampa dentro da viewport com 8px de margem mínima
+    // para não deixar o painel cortado em telas estreitas.
+    const posicionarSobre = (el, anchorRect) => {
+        el.style.top = `${anchorRect.bottom + 4}px`;
+        el.style.left = `${anchorRect.left}px`;
+        el.style.right = 'auto';
+        const rect = el.getBoundingClientRect();
+        const margem = 8;
+        if (rect.right > window.innerWidth - margem) {
+            el.style.left = `${Math.max(margem, window.innerWidth - margem - rect.width)}px`;
+        }
+    };
+
+    container.querySelectorAll('.crumb-btn').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            const nivel = btn.dataset.nivel;
+            const dropdown = dropdownRoot.querySelector(`.periodo-dropdown[data-dropdown="${nivel}"]`);
+            const estavaAberto = !dropdown.classList.contains('hidden');
+            fecharDropdowns();
+            if (!estavaAberto) {
+                const anchorRect = btn.getBoundingClientRect();
+                dropdown.classList.remove('hidden');
+                posicionarSobre(dropdown, anchorRect);
+            }
+        });
+    });
+
+    mobileTrigger.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const panel = dropdownRoot.querySelector('#breadcrumb-mobile-panel');
+        const estavaAberto = !panel.classList.contains('hidden');
+        fecharDropdowns();
+        if (!estavaAberto) {
+            const anchorRect = mobileTrigger.getBoundingClientRect();
+            panel.classList.remove('hidden');
+            posicionarSobre(panel, anchorRect);
+        }
+    });
+
+    dropdownRoot.querySelectorAll('.periodo-opt').forEach(opt => {
+        opt.addEventListener('click', (e) => {
+            e.stopPropagation();
+            onSelecionar(opt.dataset.periodo);
+        });
+    });
+
+    if (!window.__breadcrumbOutsideClickAttached) {
+        document.addEventListener('click', () => {
+            document.querySelectorAll('.periodo-dropdown, #breadcrumb-mobile-panel').forEach(d => d.classList.add('hidden'));
+        });
+        window.addEventListener('resize', () => {
+            document.querySelectorAll('.periodo-dropdown, #breadcrumb-mobile-panel').forEach(d => d.classList.add('hidden'));
+        });
+        window.__breadcrumbOutsideClickAttached = true;
+    }
+}
+
 async function renderWeeklyGrid(baseDate, layoutType) {
     const container = document.getElementById('view-dashboard');
     const grid = document.getElementById('weekly-grid');
@@ -2564,14 +2585,12 @@ async function renderWeeklyGrid(baseDate, layoutType) {
     grid.innerHTML = '';
     const weekNum = getWeekNumber(dates[0]);
         
-        // Renderizar tabs no cabeçalho principal (header-week-tabs)
+        // Renderizar tabs no cabeçalho principal (header-week-tabs).
+        // O número da semana isolado ("w38") foi substituído pelo breadcrumb de
+        // período (Ano › Mês › Semana) logo abaixo — mantém-se aqui só os dias.
         const headerTabsContainer = document.getElementById('header-week-tabs');
         if (headerTabsContainer) {
-            const weekText = `w${String(weekNum).padStart(2, '0')}`;
-            let tabsHTML = `<button data-date="weekly" class="tab-btn flex items-center justify-center px-4 py-2 rounded text-xs font-semibold transition border border-transparent bg-[var(--primary-color)] text-white hover:opacity-90" title="Visão Semanal">
-                                ${weekText}
-                            </button>
-                            <div class="w-px h-6 bg-[var(--border-color)] mx-3 flex-shrink-0"></div>`;
+            let tabsHTML = '';
 
             dates.forEach(date => {
                 const dayName = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'][date.getDay()];
@@ -2587,20 +2606,37 @@ async function renderWeeklyGrid(baseDate, layoutType) {
 
             headerTabsContainer.innerHTML = tabsHTML;
 
-            // Adicionar listeners aos botões de semana no header
+            // Adicionar listeners aos botões de dia no header
             headerTabsContainer.querySelectorAll('.tab-btn').forEach(btn => {
                 btn.addEventListener('click', (e) => {
                     const targetBtn = e.target.closest('button');
                     if (!targetBtn) return;
-                    if (targetBtn.dataset.date === 'weekly') {
-                        window.appRouter.switchToPlanosView('semanal');
-                    } else {
-                        const [y, m, d] = targetBtn.dataset.date.split('-');
-                        window.appRouter.goDaily(new Date(y, m-1, d));
-                    }
+                    const [y, m, d] = targetBtn.dataset.date.split('-');
+                    window.appRouter.goDaily(new Date(y, m-1, d));
                 });
             });
         }
+
+        // Breadcrumb de período (Ano › Mês › Semana): no dashboard, escolher uma opção
+        // troca a semana exibida na própria tela, sem navegar para os Planos.
+        const semanaAtualDashboard = getPeriodoKey(dates[0].getTime(), 'semana');
+        await renderPeriodoBreadcrumb(semanaAtualDashboard, 'semana', (key) => {
+            let alvo;
+            if (key.includes('-w')) {
+                alvo = getDataDaSemana(key);
+            } else if (key.includes('-')) {
+                const [ano, mes] = key.split('-').map(Number);
+                const hoje = new Date();
+                // Dia 15 (meio do mês) em vez do dia 1: a primeira semana de um mês às
+                // vezes "pertence" ao mês anterior (domingo cai antes da virada), o que
+                // faria clicar em "Dez" cair numa semana rotulada "Nov" no breadcrumb.
+                alvo = (key === getPeriodoKey(Date.now(), 'mes')) ? hoje : new Date(ano, mes - 1, 15);
+            } else {
+                const hoje = new Date();
+                alvo = (key === getPeriodoKey(Date.now(), 'ano')) ? hoje : new Date(Number(key), 5, 15);
+            }
+            window.appRouter.goWeekly(alvo);
+        });
 
         // Manter dynamic-header-tabs vazio (compatibilidade com listeners antigos)
         const tabsContainer = document.getElementById('dynamic-header-tabs');
