@@ -86,7 +86,15 @@ document.addEventListener('DOMContentLoaded', async () => {
         const missaoRecords = strategies.filter(s => s.type === 'missao').sort((a,b) => b.timestamp - a.timestamp);
         
         if (missaoRecords.length === 0) {
-            contentArea.innerHTML = '<div class="text-[var(--text-secondary)] italic">Nenhuma missão cadastrada ainda.</div>';
+            contentArea.innerHTML = `
+                <div class="flex justify-end gap-3 mb-6">
+                    <button id="btn-seed-estrategicos" class="px-4 py-2 border border-[var(--border-color)] rounded-lg font-semibold text-[var(--text-secondary)] hover:bg-[var(--border-color)] transition-all" title="Popula Missão, Visão, Objetivos e Planos com dados de exemplo">
+                        🎲 Carregar dados de exemplo
+                    </button>
+                </div>
+                <div class="text-[var(--text-secondary)] italic">Nenhuma missão cadastrada ainda.</div>
+            `;
+            document.getElementById('btn-seed-estrategicos').addEventListener('click', seedDemoEstrategicos);
             return;
         }
 
@@ -97,6 +105,9 @@ document.addEventListener('DOMContentLoaded', async () => {
 
         contentArea.innerHTML = `
             <div class="flex justify-end gap-3 mb-6">
+                <button id="btn-seed-estrategicos" class="px-4 py-2 border border-[var(--border-color)] rounded-lg font-semibold text-[var(--text-secondary)] hover:bg-[var(--border-color)] transition-all" title="Popula Missão, Visão, Objetivos e Planos com dados de exemplo">
+                    🎲 Carregar dados de exemplo
+                </button>
                 <button id="btn-educacional-missao" class="px-4 py-2 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700 transition-all flex items-center gap-2">
                     📚 Educacional
                 </button>
@@ -157,6 +168,11 @@ document.addEventListener('DOMContentLoaded', async () => {
             btnNewMissao.addEventListener('click', () => {
                 crudModal.open('missao');
             });
+        }
+
+        const btnSeedEstrategicos = document.getElementById('btn-seed-estrategicos');
+        if (btnSeedEstrategicos) {
+            btnSeedEstrategicos.addEventListener('click', seedDemoEstrategicos);
         }
 
         const btnEducacionalMissao = document.getElementById('btn-educacional-missao');
@@ -883,59 +899,51 @@ document.addEventListener('DOMContentLoaded', async () => {
             }
         }
 
-        await StorageService.set('planner_strategies', missoes);
-
-        // Objetivos
-        const objetivos = await StorageService.get('planner_objectives') || [];
+        // Objetivos (armazenados em planner_strategies com type 'obj_longo'/'obj_medio'/'obj_curto',
+        // igual switchToObjetivosView() lê — NUNCA em planner_objectives)
         const demoObjetivos = [
-            {
-                prazo: 'longo',
-                content: 'Dominar completamente a arquitetura de software de produção, sendo capaz de desenhar soluções escaláveis para problemas complexos.',
-                timestamp: now - 86400000 * 60
-            },
-            {
-                prazo: 'longo',
-                content: 'Estabelecer reputação como especialista em desenvolvimento de aplicações estratégicas.',
-                timestamp: now - 86400000 * 50
-            },
-            {
-                prazo: 'medio',
-                content: 'Implementar completamente o extPlanner como ferramenta de gestão estratégica 100% funcional.',
-                timestamp: now - 86400000 * 30
-            },
-            {
-                prazo: 'medio',
-                content: 'Dominar os frameworks modernos de frontend (React/Vue) e backend (Node.js/Python).',
-                timestamp: now - 86400000 * 20
-            },
-            {
-                prazo: 'curto',
-                content: 'Finalizar a seção operacional do extPlanner com listagem de atividades, filtros e relatórios.',
-                timestamp: now - 86400000 * 5
-            },
-            {
-                prazo: 'curto',
-                content: 'Revisar e otimizar o código da sprint atual, reduzindo débito técnico.',
-                timestamp: now - 86400000 * 2
-            }
+            { type: 'obj_longo', content: 'Dominar completamente a arquitetura de software de produção, sendo capaz de desenhar soluções escaláveis para problemas complexos.', timestamp: now - 86400000 * 60 },
+            { type: 'obj_longo', content: 'Estabelecer reputação como especialista em desenvolvimento de aplicações estratégicas.', timestamp: now - 86400000 * 50 },
+            { type: 'obj_medio', content: 'Implementar completamente o extPlanner como ferramenta de gestão estratégica 100% funcional.', timestamp: now - 86400000 * 30 },
+            { type: 'obj_medio', content: 'Dominar os frameworks modernos de frontend (React/Vue) e backend (Node.js/Python).', timestamp: now - 86400000 * 20 },
+            { type: 'obj_curto', content: 'Finalizar a seção operacional do extPlanner com listagem de atividades, filtros e relatórios.', timestamp: now - 86400000 * 5 },
+            { type: 'obj_curto', content: 'Revisar e otimizar o código da sprint atual, reduzindo débito técnico.', timestamp: now - 86400000 * 2 }
         ];
 
-        let addedObj = 0;
         for (const obj of demoObjetivos) {
-            if (!objetivos.some(o => o.content === obj.content)) {
-                objetivos.push({ id: 'obj_' + now + '_' + Math.random().toString(36).slice(2, 7), ...obj });
-                addedObj++;
+            if (!missoes.some(m => m.type === obj.type && m.content === obj.content)) {
+                missoes.push({ id: 'obj_' + now + '_' + Math.random().toString(36).slice(2, 7), ...obj });
             }
         }
 
-        if (addedObj > 0) await StorageService.set('planner_objectives', objetivos);
+        // Planos (Anual, Mensal, Semanal) — mesma tabela planner_strategies
+        // 2 registros por tipo, ambos dentro do período atual (ano/mês/semana) para
+        // aparecerem como "atual + histórico" já na primeira visualização
+        const demoPlanos = [
+            { type: 'plano_anual', content: 'Consolidar a base de clientes do primeiro semestre e revisar o roadmap anual.', timestamp: now - 86400000 * 30 },
+            { type: 'plano_anual', content: 'Expandir a base de usuários do extPlanner para 1000 usuários ativos, consolidar arquitetura escalável e preparar para investimento Series A.', timestamp: now - 86400000 * 15 },
+            { type: 'plano_mensal', content: 'Revisar backlog do mês e priorizar bugs críticos reportados pelos usuários.', timestamp: now - 86400000 * 10 },
+            { type: 'plano_mensal', content: 'Implementar seção de relatórios, melhorar UX do dashboard e completar testes unitários de 80% do código.', timestamp: now - 86400000 * 5 },
+            { type: 'plano_semanal', content: 'Planejar sprint da semana com foco em correções de responsividade.', timestamp: now - 86400000 * 3 },
+            { type: 'plano_semanal', content: 'Finalizar integração de drag-and-drop, corrigir bugs de responsividade mobile e documentar API de plugins.', timestamp: now - 86400000 * 1 }
+        ];
 
-        alert(`Dados de Missão/Visão/Objetivos recuperados (ou já estavam presentes).`);
+        for (const plano of demoPlanos) {
+            if (!missoes.some(m => m.type === plano.type && m.content === plano.content)) {
+                missoes.push({ id: 'p_' + now + '_' + Math.random().toString(36).slice(2, 7), ...plano });
+            }
+        }
+
+        await StorageService.set('planner_strategies', missoes);
+
+        alert(`Dados de Missão/Visão/Objetivos/Planos recuperados (ou já estavam presentes).`);
 
         // Re-render se alguma dessas views estiver ativa
         if (currentStrategicSection === 'missao') await switchToMissaoView();
         else if (currentStrategicSection === 'visao') await switchToVisaoView();
         else if (!document.getElementById('view-objetivos-educacional').classList.contains('hidden')) await switchToObjetivosView();
+        const viewPlanosEl = document.getElementById('view-planos');
+        if (viewPlanosEl && !viewPlanosEl.classList.contains('hidden')) await switchToPlanosView(currentPlanosTab);
     }
 
     async function seedDemoAtividades() {
