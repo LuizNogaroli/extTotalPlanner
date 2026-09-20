@@ -516,6 +516,14 @@ document.addEventListener('DOMContentLoaded', async () => {
             }
         });
 
+        // Plano Semanal também mostra os dias daquela semana no sub-header, dando
+        // acesso rápido à Visão Diária de qualquer um deles. Os demais Planos não usam
+        // o sub-header (hideAllViews() já o deixa limpo ao entrar na view).
+        if (tipo === 'plano_semanal') {
+            const domingo = getDataDaSemana(periodoSelecionado);
+            renderDiasNoSubheader(getWeekDates(domingo));
+        }
+
         const registrosDoPeriodo = grupos[periodoSelecionado].sort((a, b) => b.timestamp - a.timestamp);
 
         const btnHtml = isPeriodoAtual ? `
@@ -2573,6 +2581,39 @@ async function renderPeriodoBreadcrumb(periodoSelecionado, granularidadeAtiva, o
     }
 }
 
+// Popula o sub-header (dynamic-header-tabs) com os 7 dias de uma semana, cada um
+// clicável para abrir a Visão Diária. Reaproveitado pelo Dashboard (renderWeeklyGrid)
+// e pelo Plano Semanal (renderPlanoVersionado), para que ver o plano de uma semana
+// também dê acesso rápido a cada dia dela.
+function renderDiasNoSubheader(dates) {
+    const headerTabsContainer = document.getElementById('dynamic-header-tabs');
+    if (!headerTabsContainer) return;
+
+    let tabsHTML = '';
+    dates.forEach(date => {
+        const dayName = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'][date.getDay()];
+        const dateStr = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+        const displayDay = String(date.getDate()).padStart(2, '0');
+        const displayMonth = String(date.getMonth() + 1).padStart(2, '0');
+
+        tabsHTML += `<button data-date="${dateStr}" class="tab-btn flex flex-col items-center justify-center px-3 py-2 rounded text-xs font-medium transition border border-transparent text-[var(--text-secondary)] hover:bg-[var(--border-color)] hover:text-[var(--primary-color)] day-dropzone tab-dropzone flex-shrink-0">
+                        <span class="font-bold">${dayName}</span>
+                        <span class="text-[10px] opacity-70">${displayDay}/${displayMonth}</span>
+                    </button>`;
+    });
+
+    headerTabsContainer.innerHTML = tabsHTML;
+
+    headerTabsContainer.querySelectorAll('.tab-btn').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+            const targetBtn = e.target.closest('button');
+            if (!targetBtn) return;
+            const [y, m, d] = targetBtn.dataset.date.split('-');
+            window.appRouter.goDaily(new Date(y, m - 1, d));
+        });
+    });
+}
+
 async function renderWeeklyGrid(baseDate, layoutType) {
     const container = document.getElementById('view-dashboard');
     const grid = document.getElementById('weekly-grid');
@@ -2584,47 +2625,20 @@ async function renderWeeklyGrid(baseDate, layoutType) {
     const dates = getWeekDates(baseDate);
     grid.innerHTML = '';
     const weekNum = getWeekNumber(dates[0]);
-        
-        // Renderizar os 7 dias no sub-header (dynamic-header-tabs), abaixo do
-        // cabeçalho principal — dá espaço para o breadcrumb de período (Ano › Mês ›
-        // Semana) ocupar sozinho a linha de cima, sem disputar largura com os dias.
-        const headerTabsContainer = document.getElementById('dynamic-header-tabs');
-        if (headerTabsContainer) {
-            let tabsHTML = '';
 
-            dates.forEach(date => {
-                const dayName = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'][date.getDay()];
-                const dateStr = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
-                const displayDay = String(date.getDate()).padStart(2, '0');
-                const displayMonth = String(date.getMonth() + 1).padStart(2, '0');
+        renderDiasNoSubheader(dates);
 
-                tabsHTML += `<button data-date="${dateStr}" class="tab-btn flex flex-col items-center justify-center px-3 py-2 rounded text-xs font-medium transition border border-transparent text-[var(--text-secondary)] hover:bg-[var(--border-color)] hover:text-[var(--primary-color)] day-dropzone tab-dropzone flex-shrink-0">
-                                <span class="font-bold">${dayName}</span>
-                                <span class="text-[10px] opacity-70">${displayDay}/${displayMonth}</span>
-                            </button>`;
-            });
-
-            headerTabsContainer.innerHTML = tabsHTML;
-
-            // Adicionar listeners aos botões de dia no header
-            headerTabsContainer.querySelectorAll('.tab-btn').forEach(btn => {
-                btn.addEventListener('click', (e) => {
-                    const targetBtn = e.target.closest('button');
-                    if (!targetBtn) return;
-                    const [y, m, d] = targetBtn.dataset.date.split('-');
-                    window.appRouter.goDaily(new Date(y, m-1, d));
-                });
-            });
-        }
-
-        // Breadcrumb de período (Ano › Mês › Semana): no dashboard, escolher uma opção
-        // troca a semana exibida na própria tela, sem navegar para os Planos.
+        // Breadcrumb de período (Ano › Mês › Semana): no dashboard, Ano e Mês trocam a
+        // semana exibida na própria tela; Semana navega para o Plano Semanal daquele
+        // período (que também popula o sub-header com os dias correspondentes).
         const semanaAtualDashboard = getPeriodoKey(dates[0].getTime(), 'semana');
         await renderPeriodoBreadcrumb(semanaAtualDashboard, 'semana', (key) => {
-            let alvo;
             if (key.includes('-w')) {
-                alvo = getDataDaSemana(key);
-            } else if (key.includes('-')) {
+                window.appRouter.switchToPlanosView('semanal', key);
+                return;
+            }
+            let alvo;
+            if (key.includes('-')) {
                 const [ano, mes] = key.split('-').map(Number);
                 const hoje = new Date();
                 // Dia 15 (meio do mês) em vez do dia 1: a primeira semana de um mês às
