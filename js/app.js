@@ -103,26 +103,12 @@ document.addEventListener('DOMContentLoaded', async () => {
         
         const strategies = await StorageService.get('planner_strategies') || [];
         const missaoRecords = strategies.filter(s => s.type === 'missao').sort((a,b) => b.timestamp - a.timestamp);
-        
-        if (missaoRecords.length === 0) {
-            contentArea.innerHTML = `
-                <div class="flex justify-end gap-3 mb-6">
-                    <button id="btn-seed-estrategicos" class="px-4 py-2 border border-[var(--border-color)] rounded-lg font-semibold text-[var(--text-secondary)] hover:bg-[var(--border-color)] transition-all" title="Popula Missão, Visão, Objetivos e Planos com dados de exemplo">
-                        🎲 Carregar dados de exemplo
-                    </button>
-                </div>
-                <div class="text-[var(--text-secondary)] italic">Nenhuma missão cadastrada ainda.</div>
-            `;
-            document.getElementById('btn-seed-estrategicos').addEventListener('click', seedDemoEstrategicos);
-            return;
-        }
 
-        const latest = missaoRecords[0];
-        const today = new Date();
-        const dateStr = today.toLocaleDateString('pt-BR', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
-        const anteriores = missaoRecords.slice(1);
-
-        contentArea.innerHTML = `
+        // Barra de botões igual nos dois estados (vazio e com registros), como na Visão.
+        // Até a v1.53 o estado vazio só tinha o botão de dados de exemplo e um return
+        // antecipado: sem "Atualizar Missão" não havia como cadastrar a primeira, e os
+        // listeners do Educacional/Voltar nunca eram registrados (MANUAL_TECNICO v1.54).
+        const botoesMissao = `
             <div class="flex justify-end gap-3 mb-6">
                 <button id="btn-seed-estrategicos" class="px-4 py-2 border border-[var(--border-color)] rounded-lg font-semibold text-[var(--text-secondary)] hover:bg-[var(--border-color)] transition-all" title="Popula Missão, Visão, Objetivos e Planos com dados de exemplo">
                     🎲 Carregar dados de exemplo
@@ -134,52 +120,67 @@ document.addEventListener('DOMContentLoaded', async () => {
                     ✏️ Atualizar Missão
                 </button>
             </div>
+        `;
 
-            <div class="bg-gradient-to-br from-[var(--primary-color)] via-[var(--primary-color)]/90 to-[var(--primary-color)]/75 p-8 rounded-xl mb-8 shadow-lg border border-white/10">
-                <div class="mb-6">
-                    <h2 class="text-3xl font-bold text-white mb-1" style="text-shadow: 0 3px 8px rgba(0,0,0,0.5), 0 1px 3px rgba(0,0,0,0.3);">Missão Atual</h2>
-                    <p class="text-lg font-semibold text-white/95 capitalize" style="text-shadow: 0 2px 6px rgba(0,0,0,0.4);">${dateStr}</p>
-                </div>
+        if (missaoRecords.length === 0) {
+            contentArea.innerHTML = `
+                ${botoesMissao}
+                <div class="text-[var(--text-secondary)] italic">Nenhuma missão cadastrada ainda.</div>
+            `;
+        } else {
+            const latest = missaoRecords[0];
+            const today = new Date();
+            const dateStr = today.toLocaleDateString('pt-BR', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+            const anteriores = missaoRecords.slice(1);
 
-                <div class="bg-white p-6 rounded-lg border border-white/20 shadow-md">
-                    <p class="text-lg text-[var(--text-primary)] mb-6 leading-relaxed italic font-semibold">"${latest.content}"</p>
-                    <div class="flex items-center text-sm text-[var(--text-secondary)]">
-                        <span class="mr-2">📅</span>
-                        <span>Definida em: ${new Date(latest.timestamp).toLocaleString('pt-BR')}</span>
+            contentArea.innerHTML = `
+                ${botoesMissao}
+
+                <div class="bg-gradient-to-br from-[var(--primary-color)] via-[var(--primary-color)]/90 to-[var(--primary-color)]/75 p-8 rounded-xl mb-8 shadow-lg border border-white/10">
+                    <div class="mb-6">
+                        <h2 class="text-3xl font-bold text-white mb-1" style="text-shadow: 0 3px 8px rgba(0,0,0,0.5), 0 1px 3px rgba(0,0,0,0.3);">Missão Atual</h2>
+                        <p class="text-lg font-semibold text-white/95 capitalize" style="text-shadow: 0 2px 6px rgba(0,0,0,0.4);">${dateStr}</p>
+                    </div>
+
+                    <div class="bg-white p-6 rounded-lg border border-white/20 shadow-md">
+                        <p class="text-lg text-[var(--text-primary)] mb-6 leading-relaxed italic font-semibold">"${latest.content}"</p>
+                        <div class="flex items-center text-sm text-[var(--text-secondary)]">
+                            <span class="mr-2">📅</span>
+                            <span>Definida em: ${new Date(latest.timestamp).toLocaleString('pt-BR')}</span>
+                        </div>
                     </div>
                 </div>
-            </div>
 
-            ${anteriores.length > 0 ? `
-            <div class="bg-[var(--bg-panel)] p-8 rounded-xl border border-[var(--border-color)] shadow-md">
-                <h3 class="text-2xl font-bold mb-8 text-[var(--primary-color)] flex items-center">
-                    <span class="mr-3">📜</span>
-                    Missão (versões anteriores)
-                </h3>
-                <div class="space-y-3">
-                    ${anteriores.map((m, idx) => {
-                        const excerpt = m.content.substring(0, 80) + (m.content.length > 80 ? '...' : '');
-                        const daysAgo = Math.floor((new Date() - new Date(m.timestamp)) / (1000 * 60 * 60 * 24));
-                        return `
-                            <div class="bg-gradient-to-r from-white/5 to-white/0 hover:from-white/10 hover:to-white/5 p-5 rounded-lg border border-[var(--border-color)] transition-all cursor-pointer group" title="${m.content}">
-                                <div class="flex justify-between items-start gap-4">
-                                    <div class="flex-1">
-                                        <div class="text-sm text-[var(--text-secondary)] font-medium mb-1">
-                                            ${new Date(m.timestamp).toLocaleString('pt-BR')}
-                                            <span class="text-xs text-[var(--text-secondary)]/70">(há ${daysAgo} dias)</span>
+                ${anteriores.length > 0 ? `
+                <div class="bg-[var(--bg-panel)] p-8 rounded-xl border border-[var(--border-color)] shadow-md">
+                    <h3 class="text-2xl font-bold mb-8 text-[var(--primary-color)] flex items-center">
+                        <span class="mr-3">📜</span>
+                        Missão (versões anteriores)
+                    </h3>
+                    <div class="space-y-3">
+                        ${anteriores.map((m, idx) => {
+                            const excerpt = m.content.substring(0, 80) + (m.content.length > 80 ? '...' : '');
+                            const daysAgo = Math.floor((new Date() - new Date(m.timestamp)) / (1000 * 60 * 60 * 24));
+                            return `
+                                <div class="bg-gradient-to-r from-white/5 to-white/0 hover:from-white/10 hover:to-white/5 p-5 rounded-lg border border-[var(--border-color)] transition-all cursor-pointer group" title="${m.content}">
+                                    <div class="flex justify-between items-start gap-4">
+                                        <div class="flex-1">
+                                            <div class="text-sm text-[var(--text-secondary)] font-medium mb-1">
+                                                ${new Date(m.timestamp).toLocaleString('pt-BR')}
+                                                <span class="text-xs text-[var(--text-secondary)]/70">(há ${daysAgo} dias)</span>
+                                            </div>
+                                            <p class="text-[var(--text-primary)] group-hover:text-[var(--primary-color)] transition-colors italic">"${excerpt}"</p>
                                         </div>
-                                        <p class="text-[var(--text-primary)] group-hover:text-[var(--primary-color)] transition-colors italic">"${excerpt}"</p>
+                                        <span class="text-xl opacity-0 group-hover:opacity-100 transition-opacity">→</span>
                                     </div>
-                                    <span class="text-xl opacity-0 group-hover:opacity-100 transition-opacity">→</span>
                                 </div>
-                            </div>
-                        `;
-                    }).join('')}
+                            `;
+                        }).join('')}
+                    </div>
                 </div>
-            </div>
-            ` : ''}
-            </div>
-        `;
+                ` : ''}
+            `;
+        }
 
         // Adicionar listener para o botão de nova missão
         const btnNewMissao = document.getElementById('btn-new-missao');
