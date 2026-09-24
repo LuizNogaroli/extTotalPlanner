@@ -8,6 +8,7 @@ import {
     getWeekNumber, getWeekDates, getPeriodoKey, getPeriodoLabel, getDataDaSemana,
     getPeriodoPaiKeys, getSemanasDoMes, semanaLabelCompacto, semanaLabelSemAno
 } from './modules/dateUtils.js';
+import { initCitacao, renderCitacaoWidget } from './modules/citacao.js';
 
 document.addEventListener('DOMContentLoaded', async () => {
     // 1. Inicializar Tema e Acessibilidade
@@ -1735,188 +1736,10 @@ document.addEventListener('DOMContentLoaded', async () => {
     // ==========================================
     // CITAÇÃO / DEVOCIONAL — MODO ALEATÓRIO / FIXADA / OMITIR (§3.26)
     // ==========================================
-    // Cada box (motivacional/devocional) guarda uma LINHA DO TEMPO de marcos em
-    // `planner_citacao_config[tipo]`: [{ modo, id, dataInicio }, ...]. Trocar o modo ou
-    // o ID hoje cria um marco novo com dataInicio = hoje; dias passados continuam
-    // mostrando o marco que estava vigente naquela data (não são reescritos).
-    const citacaoModal = document.getElementById('global-citacao-modal');
-    const citacaoConfigModal = document.getElementById('global-citacao-config-modal');
-    const citacaoConfigIdWrap = document.getElementById('citacao-config-id-wrap');
-    const citacaoConfigIdInput = document.getElementById('citacao-config-id-input');
-    const citacaoConfigIdError = document.getElementById('citacao-config-id-error');
-    const citacaoConfigVigencia = document.getElementById('citacao-config-vigencia');
-    let citacaoConfigTipoAtual = null;
-
-    function toLocalDateStr(d) {
-        return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
-    }
-
-    // Acha o marco vigente numa data: o de maior dataInicio que não seja no futuro.
-    // Em empate de data, o último inserido no array vence (mesma data, trocado de novo).
-    function resolveCitacaoMarker(markers, dateStr) {
-        if (!markers || markers.length === 0) return { modo: 'aleatorio', id: null };
-        let best = null;
-        markers.forEach(m => {
-            if (m.dataInicio <= dateStr && (!best || m.dataInicio >= best.dataInicio)) best = m;
-        });
-        return best || { modo: 'aleatorio', id: null };
-    }
-
-    async function addCitacaoMarker(tipo, modo, id = null) {
-        const cfg = await StorageService.get('planner_citacao_config') || {};
-        if (!cfg[tipo]) cfg[tipo] = [];
-        cfg[tipo].push({ modo, id, dataInicio: toLocalDateStr(new Date()) });
-        await StorageService.set('planner_citacao_config', cfg);
-    }
-
-    // Desenha o box (motivacional ou devocional) para a data da Visão Diária aberta.
-    async function renderCitacaoWidget(tipo, dateStr) {
-        const container = document.getElementById(`widget-container-${tipo}`);
-        const contentEl = document.getElementById(`widget-${tipo}-content`);
-        if (!container || !contentEl) return;
-
-        const cfg = await StorageService.get('planner_citacao_config') || {};
-        const marker = resolveCitacaoMarker(cfg[tipo], dateStr);
-
-        if (marker.modo === 'omitir') {
-            container.style.display = 'none';
-            return;
-        }
-        container.style.display = 'flex';
-
-        const list = tipo === 'motivacional'
-            ? await window.ContentService.getMotivacionalList()
-            : await window.ContentService.getDevocionalList();
-
-        let item = null;
-        if (marker.modo === 'fixada') {
-            item = list.find(i => String(i.id) === String(marker.id)) || null;
-            if (!item) {
-                contentEl.innerHTML = `
-                    <p class="text-xs text-red-500 mb-2">⚠️ A mensagem fixada (ID ${escCompras(marker.id)}) não foi encontrada — pode ter sido excluída.</p>
-                    <button class="btn-citacao-gear-inline text-xs underline text-[var(--primary-color)]" data-tipo="${tipo}">⚙️ Escolher outra</button>
-                `;
-                window.widgetState[tipo] = { list, index: -1 };
-                return;
-            }
-            window.widgetState[tipo] = { list, index: list.indexOf(item) };
-        } else {
-            // Aleatório: sorteia uma mensagem a cada carregamento do dia.
-            if (list.length === 0) {
-                contentEl.innerHTML = "<span class='italic opacity-50'>Base de dados vazia ou buscando...</span>";
-                window.widgetState[tipo] = { list: [], index: 0 };
-                return;
-            }
-            const idx = Math.floor(Math.random() * list.length);
-            item = list[idx];
-            window.widgetState[tipo] = { list, index: idx };
-        }
-
-        const label = tipo === 'motivacional' ? '✨ Ver Citação do Dia' : '🙏 Ver Devocional do Dia';
-        const badge = marker.modo === 'fixada' ? '📌 Fixada' : '🎲 Aleatório';
-        contentEl.innerHTML = `
-            <button class="btn-citacao-ver w-full text-left border border-[var(--primary-color)] rounded px-3 py-2 text-sm font-semibold text-[var(--primary-color)] hover:bg-[var(--bg-panel)] transition" data-tipo="${tipo}">${label}</button>
-            <div class="text-[10px] mt-1 opacity-50 text-center tracking-widest">${badge}</div>
-        `;
-    }
-
-    function openCitacaoModal(tipo, item) {
-        const titleEl = document.getElementById('citacao-modal-title');
-        const bodyEl = document.getElementById('citacao-modal-body');
-        if (tipo === 'motivacional') {
-            titleEl.textContent = '✨ Citação Motivacional';
-            bodyEl.innerHTML = `<p class="italic text-base">"${escCompras(item.citacao)}"</p><p class="text-right font-semibold mt-3">- ${escCompras(item.autor)}</p>`;
-        } else {
-            titleEl.textContent = '🙏 Devocional';
-            bodyEl.innerHTML = `<p class="font-semibold">${escCompras(item.passagem)}</p><p class="mt-2 whitespace-pre-wrap">${escCompras(item.reflexao)}</p>`;
-        }
-        citacaoModal.classList.remove('hidden');
-    }
-
-    // Clique no botão do box (delegado, já que o botão é recriado a cada render)
-    document.addEventListener('click', (e) => {
-        const btnVer = e.target.closest('.btn-citacao-ver');
-        if (btnVer) {
-            const tipo = btnVer.dataset.tipo;
-            const state = window.widgetState && window.widgetState[tipo];
-            if (state && state.index >= 0 && state.list[state.index]) {
-                openCitacaoModal(tipo, state.list[state.index]);
-            }
-            return;
-        }
-        const btnGearInline = e.target.closest('.btn-citacao-gear-inline');
-        if (btnGearInline) {
-            openCitacaoConfigModal(btnGearInline.dataset.tipo);
-        }
-    });
-
-    document.querySelectorAll('.btn-citacao-gear').forEach(btn => {
-        btn.addEventListener('click', () => openCitacaoConfigModal(btn.dataset.tipo));
-    });
-
-    document.querySelectorAll('.btn-close-citacao').forEach(btn => {
-        btn.addEventListener('click', () => citacaoModal.classList.add('hidden'));
-    });
-
-    async function openCitacaoConfigModal(tipo) {
-        citacaoConfigTipoAtual = tipo;
-        document.getElementById('citacao-config-title').textContent = tipo === 'motivacional' ? '⚙️ Configurar Citação' : '⚙️ Configurar Devocional';
-
-        const hojeStr = toLocalDateStr(new Date());
-        const hojeBr = hojeStr.split('-').reverse().join('/');
-        citacaoConfigVigencia.textContent = `A escolha abaixo vale a partir de hoje (${hojeBr}). Dias anteriores continuam como estavam.`;
-
-        const cfg = await StorageService.get('planner_citacao_config') || {};
-        const markerHoje = resolveCitacaoMarker(cfg[tipo], hojeStr);
-
-        citacaoConfigModal.querySelectorAll('input[name="citacao-config-modo"]').forEach(r => {
-            r.checked = (r.value === markerHoje.modo);
-        });
-        citacaoConfigIdInput.value = markerHoje.modo === 'fixada' ? (markerHoje.id || '') : '';
-        citacaoConfigIdWrap.classList.toggle('hidden', markerHoje.modo !== 'fixada');
-        citacaoConfigIdError.classList.add('hidden');
-
-        citacaoConfigModal.classList.remove('hidden');
-    }
-
-    citacaoConfigModal.querySelectorAll('input[name="citacao-config-modo"]').forEach(r => {
-        r.addEventListener('change', () => {
-            citacaoConfigIdWrap.classList.toggle('hidden', r.value !== 'fixada' || !r.checked);
-        });
-    });
-
-    document.querySelectorAll('.btn-close-citacao-config').forEach(btn => {
-        btn.addEventListener('click', () => citacaoConfigModal.classList.add('hidden'));
-    });
-
-    document.getElementById('btn-citacao-config-save').addEventListener('click', async () => {
-        const tipo = citacaoConfigTipoAtual;
-        const modoSelecionado = citacaoConfigModal.querySelector('input[name="citacao-config-modo"]:checked');
-        if (!modoSelecionado) return;
-        const modo = modoSelecionado.value;
-
-        let id = null;
-        if (modo === 'fixada') {
-            id = citacaoConfigIdInput.value.trim();
-            if (!id) {
-                citacaoConfigIdError.textContent = 'Informe o ID da mensagem.';
-                citacaoConfigIdError.classList.remove('hidden');
-                return;
-            }
-            const item = tipo === 'motivacional'
-                ? await window.ContentService.getMotivacionalById(id)
-                : await window.ContentService.getDevocionalById(id);
-            if (!item) {
-                citacaoConfigIdError.textContent = `Nenhuma mensagem encontrada com o ID "${id}".`;
-                citacaoConfigIdError.classList.remove('hidden');
-                return;
-            }
-        }
-
-        await addCitacaoMarker(tipo, modo, id);
-        citacaoConfigModal.classList.add('hidden');
-        if (currentDailyDateStr) await renderCitacaoWidget(tipo, currentDailyDateStr);
-    });
+    // Tudo em js/modules/citacao.js desde a Fase 2 do plano de refatoração. A data do
+    // dia aberto (currentDailyDateStr) ainda mora aqui; o módulo a lê por este getter
+    // para redesenhar o box depois de salvar a configuração.
+    initCitacao({ getDataDoDiaAberto: () => currentDailyDateStr });
 
     // ==========================================
     // MODAL DE RESUMO DO DIA (LAYOUT COMPACTO)
@@ -2022,16 +1845,16 @@ document.addEventListener('DOMContentLoaded', async () => {
         
         // Puxar configurações para decidir o que mostrar. Motivacional/Devocional saíram
         // daqui na v1.47: cada um tem seu próprio modo (aleatório/fixada/omitir),
-        // configurado na engrenagem do box — ver renderCitacaoWidget().
+        // configurado na engrenagem do box — ver renderCitacaoWidget() em js/modules/citacao.js.
         const settings = await StorageService.get('planner_settings') || {
             habitos: true, historico: true, compras: true
         };
 
+        // window.widgetState hoje só serve ao widget de Histórico (Citação/Devocional
+        // guardam o próprio estado dentro de citacao.js desde a Fase 2 da refatoração).
         if (!window.widgetState) {
             window.widgetState = {
-                historico: { list: [], index: 0 },
-                motivacional: { list: [], index: 0 },
-                devocional: { list: [], index: 0 }
+                historico: { list: [], index: 0 }
             };
 
             window.renderWidgetState = function(type) {

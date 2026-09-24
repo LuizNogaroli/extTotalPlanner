@@ -2,7 +2,7 @@
 
 **Criado em:** 2026-09-24
 **Responsável:** Claude Code (Sonnet 5) & User
-**Status:** 🔄 Em andamento — Fases 0 e 1 concluídas (v1.50, 2026-09-24). Próxima: Fase 2.
+**Status:** 🔄 Em andamento — Fases 0, 1 (v1.50) e 2 (v1.51) concluídas em 2026-09-24. Próxima: Fase 3.
 
 ---
 
@@ -86,7 +86,7 @@ Marcar aqui conforme cada fase for concluída (não é para editar a tabela da s
 
 - [x] Fase 0 — Remover `renderDailyView()` morta — **v1.50**
 - [x] Fase 1 — `js/modules/dateUtils.js` — **v1.50** (equivalência verificada em Node: 14.236 comparações, 0 diferenças; `app.js` 3.388 → 3.277 linhas)
-- [ ] Fase 2 — `js/modules/citacao.js`
+- [x] Fase 2 — `js/modules/citacao.js` — **v1.51** (`app.js` 3.277 → 3.100 linhas). Diferenças em relação à tabela da §3: `toLocalDateStr` foi para `dateUtils.js`, e não para `citacao.js`, por ser uma função pura de data; o item exibido em cada box deixou de ficar em `window.widgetState` e virou estado interno do módulo. Como previsto na §4, a data do dia aberto continua em `app.js` e chega ao módulo por um getter (`initCitacao({ getDataDoDiaAberto })`) — na Fase 7, quando ela for para `dailyView.js`, é só trocar o getter.
 - [ ] Fase 3 — `js/modules/managerModal.js` (+ registro de rótulos em `crud/`)
 - [ ] Fase 4 — `js/modules/transferModal.js`
 - [ ] Fase 5 — `js/modules/views/strategic.js`

@@ -10,6 +10,12 @@
  *  - Chaves de período: ano "2026", mês "2026-09", semana "2026-w39".
  */
 
+// Data local no formato "AAAA-MM-DD". Nunca usar toISOString() para isso: ela
+// converte para UTC e pode deslocar um dia em fuso negativo (ver v1.20).
+export function toLocalDateStr(d) {
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+}
+
 // Número da semana no ano, contando a partir da semana que contém o 1º de janeiro.
 export function getWeekNumber(targetDate) {
     const date = new Date(targetDate.valueOf());
