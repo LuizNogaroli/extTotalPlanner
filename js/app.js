@@ -9,6 +9,7 @@ import {
     getPeriodoPaiKeys, getSemanasDoMes, semanaLabelCompacto, semanaLabelSemAno
 } from './modules/dateUtils.js';
 import { initCitacao, renderCitacaoWidget } from './modules/citacao.js';
+import { initManagerModal, openManager } from './modules/managerModal.js';
 
 document.addEventListener('DOMContentLoaded', async () => {
     // 1. Inicializar Tema e Acessibilidade
@@ -1586,129 +1587,14 @@ document.addEventListener('DOMContentLoaded', async () => {
     // ==========================================
     // MODAL GERENCIADOR GERAL (LISTAGENS)
     // ==========================================
-    const managerModal = document.getElementById('global-manager-modal');
-    const managerTitle = document.getElementById('manager-modal-title');
-    const managerList = document.getElementById('manager-modal-list');
-    const btnManagerAdd = document.getElementById('btn-manager-add');
-    const btnsCloseManager = document.querySelectorAll('.btn-close-manager');
-    
-    let currentManagerType = '';
-
-    async function openManager(type) {
-        currentManagerType = type;
-        const titles = {
-            'historico': 'Fatos Históricos Cadastrados',
-            'motivacional': 'Citações Motivacionais',
-            'devocional': 'Passagens Devocionais',
-            'compras': 'Itens para Comprar',
-            'estrategia': 'Cadastros Estratégicos',
-            'habito': 'Hábitos / Questionário Diário',
-            'atividade-categoria': 'Categorias de Atividades',
-            'alarme': 'Lembretes e Alarmes'
-        };
-        managerTitle.textContent = titles[type] || 'Gerenciar';
-        document.getElementById('manager-notificacoes').classList.toggle('hidden', type !== 'alarme');
-        if (type === 'alarme') renderNotificacoesUI(); // a permissão pode ter mudado fora do app
-        managerModal.classList.remove('hidden');
-
-        await renderManagerList();
-    }
-
-    async function renderManagerList() {
-        const type = currentManagerType;
-        const storageKey = 'planner_' + (type === 'estrategia' ? 'strategies' : type);
-        const items = await StorageService.get(storageKey) || [];
-        
-        managerList.innerHTML = '';
-        if (items.length === 0) {
-            managerList.innerHTML = `<li class="text-[var(--text-secondary)] italic text-sm p-4 text-center">Nenhum item cadastrado.</li>`;
-            return;
-        }
-
-        items.forEach(item => {
-            const li = document.createElement('li');
-            li.className = "flex justify-between items-center p-3 bg-[var(--bg-panel)] border border-[var(--border-color)] rounded shadow-sm hover:shadow-md transition";
-            
-            let titleText = '';
-            if (type === 'historico') titleText = `[${item.date}] ${item.fato.substring(0,40)}...`;
-            else if (type === 'motivacional') titleText = `"${item.citacao.substring(0,40)}..." - ${item.autor}`;
-            else if (type === 'devocional') titleText = `${item.passagem}: ${item.reflexao.substring(0,30)}...`;
-            else if (type === 'compras') {
-                const cat = item.categoria ? `[${item.categoria}] ` : '';
-                titleText = `${cat}${item.item} (${item.detalhes || 'Sem detalhes'})`;
-            } else if (type === 'estrategia') {
-                const mapType = { 'missao': 'Missão', 'visao': 'Visão', 'valores': 'Valores', 'obj_curto': 'Curto Prazo', 'obj_medio': 'Médio Prazo', 'obj_longo': 'Longo Prazo' };
-                const dt = item.date ? `[${item.date}] ` : '';
-                titleText = `${dt}[${mapType[item.type] || item.type}] ${item.content.substring(0,40)}...`;
-            } else if (type === 'habito') {
-                const cat = item.category ? `[${item.category}] ` : '';
-                titleText = `${cat}${item.question}`;
-            } else if (type === 'atividade-categoria') {
-                titleText = item.nome;
-            } else if (type === 'alarme') {
-                let recStr = 'Diário';
-                if (item.recurrence === 'unico') recStr = `Dia ${item.date}`;
-                else if (item.recurrence === 'semanal') {
-                    const daysMap = {'0':'Dom','1':'Seg','2':'Ter','3':'Qua','4':'Qui','5':'Sex','6':'Sáb'};
-                    recStr = (item.weekdays || []).map(d => daysMap[d]).join(', ');
-                }
-                titleText = `⏰ ${item.time} (${recStr}) - ${item.title}`;
-            }
-
-            // Motivacional/Devocional: mostra o ID, usado para "fixar" a mensagem no
-            // box da página do dia (modo Fixada, §3.26). Botão copia pro clipboard,
-            // já que o ID é um timestamp longo, chato de digitar de cabeça.
-            const idBadge = (type === 'motivacional' || type === 'devocional')
-                ? `<div class="text-[10px] text-[var(--text-secondary)] mt-1 flex items-center gap-1">ID: <code class="bg-[var(--bg-color)] px-1 rounded">${item.id}</code>
-                       <button class="btn-copy-id text-[var(--primary-color)] hover:underline" title="Copiar ID">📋 copiar</button></div>`
-                : '';
-
-            li.innerHTML = `
-                <div class="flex-1 min-w-0 mr-4">
-                    <span class="text-sm font-semibold truncate block text-[var(--text-primary)]">${titleText}</span>
-                    ${idBadge}
-                </div>
-                <div class="flex space-x-2 flex-shrink-0">
-                    <button class="text-xs border border-[var(--border-color)] text-[var(--text-secondary)] hover:text-[var(--primary-color)] hover:border-[var(--primary-color)] transition px-2 py-1 rounded btn-edit" title="Editar">✏️ Editar</button>
-                    <button class="text-xs border border-red-300 text-red-500 hover:bg-red-50 transition px-2 py-1 rounded btn-delete" title="Excluir">🗑️</button>
-                </div>
-            `;
-
-            li.querySelector('.btn-edit').addEventListener('click', () => {
-                managerModal.classList.add('hidden'); // Opcional, ou deixa aberto atrás
-                crudModal.open(type, item);
-            });
-
-            const btnCopyId = li.querySelector('.btn-copy-id');
-            if (btnCopyId) {
-                btnCopyId.addEventListener('click', async () => {
-                    try {
-                        await navigator.clipboard.writeText(String(item.id));
-                        btnCopyId.textContent = '✅ copiado';
-                        setTimeout(() => { btnCopyId.textContent = '📋 copiar'; }, 1500);
-                    } catch (e) {
-                        alert(`ID: ${item.id}`); // Fallback se o clipboard não estiver disponível
-                    }
-                });
-            }
-
-            li.querySelector('.btn-delete').addEventListener('click', async () => {
-                if(confirm('Tem certeza que deseja excluir?')) {
-                    const filtered = items.filter(i => i.id !== item.id);
-                    await StorageService.set(storageKey, filtered);
-                    renderManagerList(); // Recarrega lista
-                }
-            });
-
-            managerList.appendChild(li);
-        });
-    }
-
-    btnsCloseManager.forEach(btn => btn.addEventListener('click', () => managerModal.classList.add('hidden')));
-
-    btnManagerAdd.addEventListener('click', () => {
-        managerModal.classList.add('hidden');
-        crudModal.open(currentManagerType);
+    // Tudo extraído para js/modules/managerModal.js na Fase 3 da refatoração.
+    initManagerModal({
+        managerModal: document.getElementById('global-manager-modal'),
+        managerTitle: document.getElementById('manager-modal-title'),
+        managerList: document.getElementById('manager-modal-list'),
+        btnManagerAdd: document.getElementById('btn-manager-add'),
+        btnsCloseManager: document.querySelectorAll('.btn-close-manager'),
+        crudModal
     });
 
     // ==========================================
