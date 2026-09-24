@@ -96,6 +96,8 @@
                             <a href="#" class="nav-subitem" onclick="window.appRouter.openManager('alarme')">⏰ Alarmes</a>
                             <a href="#" id="menu-pomodoro" class="nav-subitem">🍅 Pomodoro</a>
                             <a href="#" id="menu-compras" class="nav-subitem">🛒 Lista de Compras</a>
+                            <a href="#" class="nav-subitem" onclick="window.appRouter.openManager('motivacional')">✨ Citações Motivacionais</a>
+                            <a href="#" class="nav-subitem" onclick="window.appRouter.openManager('devocional')">🙏 Passagens Devocionais</a>
                         </div>
                     </details>
 
@@ -241,13 +243,19 @@
 
                             <!-- WIDGET: MOTIVACIONAL -->
                             <div id="widget-container-motivacional" class="border border-[var(--border-color)] rounded p-4 bg-[var(--bg-color)] hidden">
-                                <h4 class="font-bold text-sm text-[var(--primary-color)] mb-2 uppercase tracking-wider">✨ Citação</h4>
-                                <div id="widget-motivacional-content" class="text-sm italic border-l-4 border-[var(--primary-color)] pl-3 py-1"></div>
+                                <div class="flex justify-between items-center mb-2">
+                                    <h4 class="font-bold text-sm text-[var(--primary-color)] uppercase tracking-wider">✨ Citação</h4>
+                                    <button class="btn-citacao-gear text-xs opacity-60 hover:opacity-100 transition" data-tipo="motivacional" title="Configurar Citação">⚙️</button>
+                                </div>
+                                <div id="widget-motivacional-content" class="text-sm"></div>
                             </div>
 
                             <!-- WIDGET: DEVOCIONAL -->
                             <div id="widget-container-devocional" class="border border-[var(--border-color)] rounded p-4 bg-[var(--bg-color)] hidden">
-                                <h4 class="font-bold text-sm text-[var(--primary-color)] mb-2 uppercase tracking-wider">🙏 Devocional</h4>
+                                <div class="flex justify-between items-center mb-2">
+                                    <h4 class="font-bold text-sm text-[var(--primary-color)] uppercase tracking-wider">🙏 Devocional</h4>
+                                    <button class="btn-citacao-gear text-xs opacity-60 hover:opacity-100 transition" data-tipo="devocional" title="Configurar Devocional">⚙️</button>
+                                </div>
                                 <div id="widget-devocional-content" class="text-sm"></div>
                             </div>
 
@@ -299,11 +307,10 @@
                             <div class="space-y-2">
                                 <label><input type="checkbox" id="setting-widget-habitos"> Hábitos</label><br>
                                 <label><input type="checkbox" id="setting-widget-historico"> Histórico</label><br>
-                                <label><input type="checkbox" id="setting-widget-motivacional"> Motivacional</label><br>
-                                <label><input type="checkbox" id="setting-widget-devocional"> Devocional</label><br>
                                 <label><input type="checkbox" id="setting-widget-compras"> Compras</label><br>
                                 <label><input type="checkbox" id="setting-widget-alarme"> Alarmes</label>
                             </div>
+                            <p class="text-xs text-[var(--text-secondary)] mt-2">Citação e Devocional saíram daqui: use a engrenagem ⚙️ no próprio box, na página do dia, para escolher entre Aleatório, Fixada ou Omitir.</p>
                         </div>
                     </div>
                 </div>
@@ -1017,6 +1024,52 @@
             </div>
         </div>
     </div>
+
+    <!-- Modal Global de Citação (Motivacional/Devocional) — mostra a mensagem em vigor -->
+    <div id="global-citacao-modal" class="fixed inset-0 bg-black bg-opacity-50 hidden z-50 flex items-center justify-center p-4">
+        <div class="border border-[var(--border-color)] rounded-lg shadow-xl w-full max-w-md p-6 flex flex-col max-h-[90vh]" style="background-color: var(--bg-panel);">
+            <div class="flex justify-between items-center mb-4 border-b border-[var(--border-color)] pb-3">
+                <h3 id="citacao-modal-title" class="text-xl font-bold text-[var(--primary-color)]">Citação</h3>
+                <button class="btn-close-citacao text-[var(--text-secondary)] hover:text-[var(--text-primary)] font-bold text-xl">&times;</button>
+            </div>
+            <div id="citacao-modal-body" class="flex-1 overflow-auto text-sm space-y-2"></div>
+        </div>
+    </div>
+
+    <!-- Modal Global de Configuração de Citação — modo Aleatório/Fixada/Omitir por box -->
+    <div id="global-citacao-config-modal" class="fixed inset-0 bg-black bg-opacity-50 hidden z-50 flex items-center justify-center p-4">
+        <div class="border border-[var(--border-color)] rounded-lg shadow-xl w-full max-w-md p-6 flex flex-col max-h-[90vh]" style="background-color: var(--bg-panel);">
+            <div class="flex justify-between items-center mb-4 border-b border-[var(--border-color)] pb-3">
+                <h3 id="citacao-config-title" class="text-xl font-bold text-[var(--primary-color)]">⚙️ Configurar</h3>
+                <button class="btn-close-citacao-config text-[var(--text-secondary)] hover:text-[var(--text-primary)] font-bold text-xl">&times;</button>
+            </div>
+            <p id="citacao-config-vigencia" class="text-xs text-[var(--text-secondary)] mb-3"></p>
+            <div class="flex-1 overflow-auto space-y-3">
+                <label class="flex items-start gap-2 p-2 rounded border border-[var(--border-color)] cursor-pointer">
+                    <input type="radio" name="citacao-config-modo" value="aleatorio" class="mt-1">
+                    <span class="text-sm"><strong>Aleatório</strong> — sorteia uma mensagem diferente a cada dia.</span>
+                </label>
+                <label class="flex items-start gap-2 p-2 rounded border border-[var(--border-color)] cursor-pointer">
+                    <input type="radio" name="citacao-config-modo" value="fixada" class="mt-1">
+                    <span class="text-sm"><strong>Fixada</strong> — você escolhe o ID de uma mensagem específica.</span>
+                </label>
+                <div id="citacao-config-id-wrap" class="hidden pl-7 space-y-1">
+                    <label class="text-xs text-[var(--text-secondary)] block">ID da mensagem (veja em "Gerenciar")</label>
+                    <input id="citacao-config-id-input" type="text" class="w-full border border-[var(--border-color)] rounded px-2 py-1.5 text-sm bg-[var(--bg-color)]" placeholder="Cole o ID aqui">
+                    <p id="citacao-config-id-error" class="text-xs text-red-600 hidden"></p>
+                </div>
+                <label class="flex items-start gap-2 p-2 rounded border border-[var(--border-color)] cursor-pointer">
+                    <input type="radio" name="citacao-config-modo" value="omitir" class="mt-1">
+                    <span class="text-sm"><strong>Omitir</strong> — esconde este box.</span>
+                </label>
+            </div>
+            <div class="mt-4 pt-3 border-t border-[var(--border-color)] flex justify-end gap-2">
+                <button class="btn-close-citacao-config text-sm px-3 py-1.5 rounded border border-[var(--border-color)]">Cancelar</button>
+                <button id="btn-citacao-config-save" class="text-sm px-3 py-1.5 rounded bg-[var(--primary-color)] text-white font-bold">Salvar</button>
+            </div>
+        </div>
+    </div>
+
     <script src="js/services/StorageService.js"></script>
     <script src="js/services/ThemeService.js"></script>
     <script src="js/services/I18nService.js"></script>

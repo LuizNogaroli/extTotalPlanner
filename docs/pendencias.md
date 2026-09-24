@@ -25,6 +25,7 @@ Sempre que possível, o item diz onde está o problema e sugere uma correção. 
 - [ ] **1.5. Botões 🖨️ "Gerar Relatório A4 do Dia" dos cards de dia não fazem nada** 📖. O `onclick` é só `event.preventDefault()`, em `renderWeeklyGrid()`. Implementar a impressão, ou remover os botões, como foi feito com o "Relatório" do cabeçalho na v1.38.
 - [ ] **1.6. As telas "Relatórios" e "Exportar Dados" são inalcançáveis** 📖. `#view-reports` e `#view-export` existem no HTML, e `app.js` tem `switchToReportsView`/`switchToExportView` e todo o código de exportação CSV. Mas não existe nenhum item de menu para essas telas (`#menu-reports`/`#menu-export` não estão no HTML), nem nenhum botão `.btn-export-csv-module`. Decidir: religar no menu (Recursos?) ou remover.
 - [ ] **1.7. O breadcrumb do cabeçalho não alterna entre desktop e celular ao redimensionar** ✔. A escolha é feita só quando ele é desenhado. Ver `docs/header.md` §6 nº 5.
+- [ ] **1.8. "+ Novo Item" de Fatos Históricos (`historico`) nunca salva** ✔. Mesma classe de bug corrigida em Motivacional/Devocional na v1.47 (§3.26): `crud/formMappers.js` declara `fields: ['id','createdAt','data','titulo','descricao','tipo']` e `requires: ['data','titulo']`, mas o formulário real (`form-historico`, `index.html`) só tem os campos `historico-date` e `historico-fato`. `extractFormData()` pula os campos inexistentes, a validação de `requires` nunca passa, e o clique em "Salvar" fecha... não, nem fecha — fica no formulário sem nenhum aviso visível (não há `alert`, e os `<span class="form-error">` do form usam os nomes errados, então `displayErrors()` também não encontra onde escrever). **Verificado no navegador:** preencher e clicar Salvar não grava nada em `planner_historico` e o modal continua aberto. **Correção sugerida:** trocar `fields`/`requires` para `['id', 'createdAt', 'date', 'fato']` / `['date', 'fato']`, igual ao que já foi feito para `motivacional`/`devocional`.
 
 ## 2. Problemas visuais e de tema
 
@@ -151,6 +152,7 @@ Itens que constavam como pendentes e foram resolvidos. O detalhe está na seçã
 - [x] Lista de Compras interna, com migração dos dois formatos antigos, Pomodoro e grupo "Outros Sistemas" (v1.43).
 - [x] `rodar.bat`: servidor que travava e porta compartilhada (v1.44).
 - [x] No Plano Semanal, clicar num dia do sub-header não abria a Visão Diária (v1.46).
+- [x] Citação/Devocional: boxes viram botão + modal, com modo Aleatório/Fixada/Omitir versionado por data; "+ Novo Item" de Motivacional/Devocional (que nunca salvava) corrigido; gerenciadores religados no menu Recursos (v1.47).
 
 ---
 **Próximos Passos (sugestão de prioridade):**

@@ -82,22 +82,28 @@ export const FORM_REGISTRY = {
   },
 
   // ==================== MOTIVACIONAL ====================
+  // Corrigido na v1.47: os campos declarados aqui (titulo/descricao/tipo/data) não
+  // existiam em form-motivacional (index.html), que só tem citacao/autor — o Salvar
+  // sempre falhava a validação em silêncio (extractFormData pulava os campos
+  // inexistentes, requires:['titulo'] nunca era satisfeito). Ver §3.26.
   motivacional: {
     storageKey: 'planner_motivacional',
     formId: 'form-motivacional',
-    fields: ['id', 'createdAt', 'titulo', 'descricao', 'tipo', 'data'],
+    fields: ['id', 'createdAt', 'citacao', 'autor'],
     titles: { create: 'Novo Item Motivacional', edit: 'Editar Motivacional' },
-    requires: ['titulo'],
+    requires: ['citacao'],
     defaults: {}
   },
 
   // ==================== DEVOCIONAL ====================
+  // Corrigido na v1.47: mesmo bug do Motivacional acima — os campos reais em
+  // form-devocional são passagem/reflexao, não data/oracoes. Ver §3.26.
   devocional: {
     storageKey: 'planner_devocional',
     formId: 'form-devocional',
-    fields: ['id', 'createdAt', 'data', 'passagem', 'reflexao', 'oracoes'],
+    fields: ['id', 'createdAt', 'passagem', 'reflexao'],
     titles: { create: 'Novo Devocional', edit: 'Editar Devocional' },
-    requires: ['data', 'passagem'],
+    requires: ['passagem', 'reflexao'],
     defaults: {}
   },
 

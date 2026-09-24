@@ -1649,19 +1649,43 @@ document.addEventListener('DOMContentLoaded', async () => {
                 titleText = `⏰ ${item.time} (${recStr}) - ${item.title}`;
             }
 
+            // Motivacional/Devocional: mostra o ID, usado para "fixar" a mensagem no
+            // box da página do dia (modo Fixada, §3.26). Botão copia pro clipboard,
+            // já que o ID é um timestamp longo, chato de digitar de cabeça.
+            const idBadge = (type === 'motivacional' || type === 'devocional')
+                ? `<div class="text-[10px] text-[var(--text-secondary)] mt-1 flex items-center gap-1">ID: <code class="bg-[var(--bg-color)] px-1 rounded">${item.id}</code>
+                       <button class="btn-copy-id text-[var(--primary-color)] hover:underline" title="Copiar ID">📋 copiar</button></div>`
+                : '';
+
             li.innerHTML = `
-                <span class="text-sm font-semibold truncate flex-1 text-[var(--text-primary)] mr-4">${titleText}</span>
-                <div class="flex space-x-2">
+                <div class="flex-1 min-w-0 mr-4">
+                    <span class="text-sm font-semibold truncate block text-[var(--text-primary)]">${titleText}</span>
+                    ${idBadge}
+                </div>
+                <div class="flex space-x-2 flex-shrink-0">
                     <button class="text-xs border border-[var(--border-color)] text-[var(--text-secondary)] hover:text-[var(--primary-color)] hover:border-[var(--primary-color)] transition px-2 py-1 rounded btn-edit" title="Editar">✏️ Editar</button>
                     <button class="text-xs border border-red-300 text-red-500 hover:bg-red-50 transition px-2 py-1 rounded btn-delete" title="Excluir">🗑️</button>
                 </div>
             `;
-            
+
             li.querySelector('.btn-edit').addEventListener('click', () => {
                 managerModal.classList.add('hidden'); // Opcional, ou deixa aberto atrás
                 crudModal.open(type, item);
             });
-            
+
+            const btnCopyId = li.querySelector('.btn-copy-id');
+            if (btnCopyId) {
+                btnCopyId.addEventListener('click', async () => {
+                    try {
+                        await navigator.clipboard.writeText(String(item.id));
+                        btnCopyId.textContent = '✅ copiado';
+                        setTimeout(() => { btnCopyId.textContent = '📋 copiar'; }, 1500);
+                    } catch (e) {
+                        alert(`ID: ${item.id}`); // Fallback se o clipboard não estiver disponível
+                    }
+                });
+            }
+
             li.querySelector('.btn-delete').addEventListener('click', async () => {
                 if(confirm('Tem certeza que deseja excluir?')) {
                     const filtered = items.filter(i => i.id !== item.id);
@@ -1703,6 +1727,192 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
 
     btnsCloseView.forEach(btn => btn.addEventListener('click', () => viewModal.classList.add('hidden')));
+
+    // ==========================================
+    // CITAÇÃO / DEVOCIONAL — MODO ALEATÓRIO / FIXADA / OMITIR (§3.26)
+    // ==========================================
+    // Cada box (motivacional/devocional) guarda uma LINHA DO TEMPO de marcos em
+    // `planner_citacao_config[tipo]`: [{ modo, id, dataInicio }, ...]. Trocar o modo ou
+    // o ID hoje cria um marco novo com dataInicio = hoje; dias passados continuam
+    // mostrando o marco que estava vigente naquela data (não são reescritos).
+    const citacaoModal = document.getElementById('global-citacao-modal');
+    const citacaoConfigModal = document.getElementById('global-citacao-config-modal');
+    const citacaoConfigIdWrap = document.getElementById('citacao-config-id-wrap');
+    const citacaoConfigIdInput = document.getElementById('citacao-config-id-input');
+    const citacaoConfigIdError = document.getElementById('citacao-config-id-error');
+    const citacaoConfigVigencia = document.getElementById('citacao-config-vigencia');
+    let citacaoConfigTipoAtual = null;
+
+    function toLocalDateStr(d) {
+        return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+    }
+
+    // Acha o marco vigente numa data: o de maior dataInicio que não seja no futuro.
+    // Em empate de data, o último inserido no array vence (mesma data, trocado de novo).
+    function resolveCitacaoMarker(markers, dateStr) {
+        if (!markers || markers.length === 0) return { modo: 'aleatorio', id: null };
+        let best = null;
+        markers.forEach(m => {
+            if (m.dataInicio <= dateStr && (!best || m.dataInicio >= best.dataInicio)) best = m;
+        });
+        return best || { modo: 'aleatorio', id: null };
+    }
+
+    async function addCitacaoMarker(tipo, modo, id = null) {
+        const cfg = await StorageService.get('planner_citacao_config') || {};
+        if (!cfg[tipo]) cfg[tipo] = [];
+        cfg[tipo].push({ modo, id, dataInicio: toLocalDateStr(new Date()) });
+        await StorageService.set('planner_citacao_config', cfg);
+    }
+
+    // Desenha o box (motivacional ou devocional) para a data da Visão Diária aberta.
+    async function renderCitacaoWidget(tipo, dateStr) {
+        const container = document.getElementById(`widget-container-${tipo}`);
+        const contentEl = document.getElementById(`widget-${tipo}-content`);
+        if (!container || !contentEl) return;
+
+        const cfg = await StorageService.get('planner_citacao_config') || {};
+        const marker = resolveCitacaoMarker(cfg[tipo], dateStr);
+
+        if (marker.modo === 'omitir') {
+            container.style.display = 'none';
+            return;
+        }
+        container.style.display = 'flex';
+
+        const list = tipo === 'motivacional'
+            ? await window.ContentService.getMotivacionalList()
+            : await window.ContentService.getDevocionalList();
+
+        let item = null;
+        if (marker.modo === 'fixada') {
+            item = list.find(i => String(i.id) === String(marker.id)) || null;
+            if (!item) {
+                contentEl.innerHTML = `
+                    <p class="text-xs text-red-500 mb-2">⚠️ A mensagem fixada (ID ${escCompras(marker.id)}) não foi encontrada — pode ter sido excluída.</p>
+                    <button class="btn-citacao-gear-inline text-xs underline text-[var(--primary-color)]" data-tipo="${tipo}">⚙️ Escolher outra</button>
+                `;
+                window.widgetState[tipo] = { list, index: -1 };
+                return;
+            }
+            window.widgetState[tipo] = { list, index: list.indexOf(item) };
+        } else {
+            // Aleatório: sorteia uma mensagem a cada carregamento do dia.
+            if (list.length === 0) {
+                contentEl.innerHTML = "<span class='italic opacity-50'>Base de dados vazia ou buscando...</span>";
+                window.widgetState[tipo] = { list: [], index: 0 };
+                return;
+            }
+            const idx = Math.floor(Math.random() * list.length);
+            item = list[idx];
+            window.widgetState[tipo] = { list, index: idx };
+        }
+
+        const label = tipo === 'motivacional' ? '✨ Ver Citação do Dia' : '🙏 Ver Devocional do Dia';
+        const badge = marker.modo === 'fixada' ? '📌 Fixada' : '🎲 Aleatório';
+        contentEl.innerHTML = `
+            <button class="btn-citacao-ver w-full text-left border border-[var(--primary-color)] rounded px-3 py-2 text-sm font-semibold text-[var(--primary-color)] hover:bg-[var(--bg-panel)] transition" data-tipo="${tipo}">${label}</button>
+            <div class="text-[10px] mt-1 opacity-50 text-center tracking-widest">${badge}</div>
+        `;
+    }
+
+    function openCitacaoModal(tipo, item) {
+        const titleEl = document.getElementById('citacao-modal-title');
+        const bodyEl = document.getElementById('citacao-modal-body');
+        if (tipo === 'motivacional') {
+            titleEl.textContent = '✨ Citação Motivacional';
+            bodyEl.innerHTML = `<p class="italic text-base">"${escCompras(item.citacao)}"</p><p class="text-right font-semibold mt-3">- ${escCompras(item.autor)}</p>`;
+        } else {
+            titleEl.textContent = '🙏 Devocional';
+            bodyEl.innerHTML = `<p class="font-semibold">${escCompras(item.passagem)}</p><p class="mt-2 whitespace-pre-wrap">${escCompras(item.reflexao)}</p>`;
+        }
+        citacaoModal.classList.remove('hidden');
+    }
+
+    // Clique no botão do box (delegado, já que o botão é recriado a cada render)
+    document.addEventListener('click', (e) => {
+        const btnVer = e.target.closest('.btn-citacao-ver');
+        if (btnVer) {
+            const tipo = btnVer.dataset.tipo;
+            const state = window.widgetState && window.widgetState[tipo];
+            if (state && state.index >= 0 && state.list[state.index]) {
+                openCitacaoModal(tipo, state.list[state.index]);
+            }
+            return;
+        }
+        const btnGearInline = e.target.closest('.btn-citacao-gear-inline');
+        if (btnGearInline) {
+            openCitacaoConfigModal(btnGearInline.dataset.tipo);
+        }
+    });
+
+    document.querySelectorAll('.btn-citacao-gear').forEach(btn => {
+        btn.addEventListener('click', () => openCitacaoConfigModal(btn.dataset.tipo));
+    });
+
+    document.querySelectorAll('.btn-close-citacao').forEach(btn => {
+        btn.addEventListener('click', () => citacaoModal.classList.add('hidden'));
+    });
+
+    async function openCitacaoConfigModal(tipo) {
+        citacaoConfigTipoAtual = tipo;
+        document.getElementById('citacao-config-title').textContent = tipo === 'motivacional' ? '⚙️ Configurar Citação' : '⚙️ Configurar Devocional';
+
+        const hojeStr = toLocalDateStr(new Date());
+        const hojeBr = hojeStr.split('-').reverse().join('/');
+        citacaoConfigVigencia.textContent = `A escolha abaixo vale a partir de hoje (${hojeBr}). Dias anteriores continuam como estavam.`;
+
+        const cfg = await StorageService.get('planner_citacao_config') || {};
+        const markerHoje = resolveCitacaoMarker(cfg[tipo], hojeStr);
+
+        citacaoConfigModal.querySelectorAll('input[name="citacao-config-modo"]').forEach(r => {
+            r.checked = (r.value === markerHoje.modo);
+        });
+        citacaoConfigIdInput.value = markerHoje.modo === 'fixada' ? (markerHoje.id || '') : '';
+        citacaoConfigIdWrap.classList.toggle('hidden', markerHoje.modo !== 'fixada');
+        citacaoConfigIdError.classList.add('hidden');
+
+        citacaoConfigModal.classList.remove('hidden');
+    }
+
+    citacaoConfigModal.querySelectorAll('input[name="citacao-config-modo"]').forEach(r => {
+        r.addEventListener('change', () => {
+            citacaoConfigIdWrap.classList.toggle('hidden', r.value !== 'fixada' || !r.checked);
+        });
+    });
+
+    document.querySelectorAll('.btn-close-citacao-config').forEach(btn => {
+        btn.addEventListener('click', () => citacaoConfigModal.classList.add('hidden'));
+    });
+
+    document.getElementById('btn-citacao-config-save').addEventListener('click', async () => {
+        const tipo = citacaoConfigTipoAtual;
+        const modoSelecionado = citacaoConfigModal.querySelector('input[name="citacao-config-modo"]:checked');
+        if (!modoSelecionado) return;
+        const modo = modoSelecionado.value;
+
+        let id = null;
+        if (modo === 'fixada') {
+            id = citacaoConfigIdInput.value.trim();
+            if (!id) {
+                citacaoConfigIdError.textContent = 'Informe o ID da mensagem.';
+                citacaoConfigIdError.classList.remove('hidden');
+                return;
+            }
+            const item = tipo === 'motivacional'
+                ? await window.ContentService.getMotivacionalById(id)
+                : await window.ContentService.getDevocionalById(id);
+            if (!item) {
+                citacaoConfigIdError.textContent = `Nenhuma mensagem encontrada com o ID "${id}".`;
+                citacaoConfigIdError.classList.remove('hidden');
+                return;
+            }
+        }
+
+        await addCitacaoMarker(tipo, modo, id);
+        citacaoConfigModal.classList.add('hidden');
+        if (currentDailyDateStr) await renderCitacaoWidget(tipo, currentDailyDateStr);
+    });
 
     // ==========================================
     // MODAL DE RESUMO DO DIA (LAYOUT COMPACTO)
@@ -1806,9 +2016,11 @@ document.addEventListener('DOMContentLoaded', async () => {
 
         // ==== CARREGAMENTO ASSÍNCRONO DOS WIDGETS ====
         
-        // Puxar configurações para decidir o que mostrar
+        // Puxar configurações para decidir o que mostrar. Motivacional/Devocional saíram
+        // daqui na v1.47: cada um tem seu próprio modo (aleatório/fixada/omitir),
+        // configurado na engrenagem do box — ver renderCitacaoWidget().
         const settings = await StorageService.get('planner_settings') || {
-            habitos: true, historico: true, motivacional: true, devocional: true, compras: true
+            habitos: true, historico: true, compras: true
         };
 
         if (!window.widgetState) {
@@ -1822,25 +2034,18 @@ document.addEventListener('DOMContentLoaded', async () => {
                 const state = window.widgetState[type];
                 const container = document.getElementById(`widget-${type}-content`);
                 if (!container) return;
-                
+
                 if (!state.list || state.list.length === 0) {
                     container.innerHTML = "<span class='italic opacity-50'>Base de dados vazia ou buscando...</span>";
                     return;
                 }
-                
+
                 if (state.index >= state.list.length) state.index = 0;
                 if (state.index < 0) state.index = state.list.length - 1;
-                
+
                 const item = state.list[state.index];
-                let contentHtml = '';
-                if (type === 'historico') {
-                    contentHtml = `<strong>${item.date}:</strong> ${item.fato}`;
-                } else if (type === 'motivacional') {
-                    contentHtml = `<span class="italic">"${item.citacao}"</span><br><span class="block mt-2 text-right font-semibold">- ${item.autor}</span>`;
-                } else if (type === 'devocional') {
-                    contentHtml = `<span class="italic">"${item.reflexao}"</span><br><span class="block mt-2 text-right font-semibold">- ${item.passagem}</span>`;
-                }
-                
+                const contentHtml = `<strong>${item.date}:</strong> ${item.fato}`;
+
                 container.innerHTML = `${contentHtml} <div class="text-[10px] mt-3 pt-2 border-t border-[var(--border-color)] text-center opacity-50 font-bold tracking-widest">${state.index + 1} / ${state.list.length}</div>`;
             };
 
@@ -1862,27 +2067,9 @@ document.addEventListener('DOMContentLoaded', async () => {
             histContainer.style.display = 'none';
         }
 
-        // 2. Motivacional
-        const motContainer = document.getElementById('widget-container-motivacional');
-        if (settings.motivacional) {
-            motContainer.style.display = 'flex';
-            window.widgetState.motivacional.list = await window.ContentService.getMotivacionalList();
-            window.widgetState.motivacional.index = window.widgetState.motivacional.list.length > 0 ? Math.floor(Math.random() * window.widgetState.motivacional.list.length) : 0;
-            window.renderWidgetState('motivacional');
-        } else {
-            motContainer.style.display = 'none';
-        }
-
-        // 3. Devocional
-        const devContainer = document.getElementById('widget-container-devocional');
-        if (settings.devocional) {
-            devContainer.style.display = 'flex';
-            window.widgetState.devocional.list = await window.ContentService.getDevocionalList();
-            window.widgetState.devocional.index = window.widgetState.devocional.list.length > 0 ? Math.floor(Math.random() * window.widgetState.devocional.list.length) : 0;
-            window.renderWidgetState('devocional');
-        } else {
-            devContainer.style.display = 'none';
-        }
+        // 2. Motivacional e 3. Devocional (modo Aleatório/Fixada/Omitir por box, §3.26)
+        await renderCitacaoWidget('motivacional', currentDailyDateStr);
+        await renderCitacaoWidget('devocional', currentDailyDateStr);
 
         // 4. Compras
         const compContainer = document.getElementById('widget-container-compras');
@@ -2234,12 +2421,14 @@ document.addEventListener('DOMContentLoaded', async () => {
     // ==========================================
     // CONFIGURAÇÕES DA VISÃO DIÁRIA
     // ==========================================
-    const settingsCheckboxes = ['habitos', 'historico', 'motivacional', 'devocional', 'compras'];
-    
+    // Motivacional/Devocional não entram mais aqui — cada um tem seu próprio modo
+    // (Aleatório/Fixada/Omitir), configurado na engrenagem do box (§3.26).
+    const settingsCheckboxes = ['habitos', 'historico', 'compras'];
+
     // Carregar
     StorageService.get('planner_settings').then(settings => {
         if (!settings) {
-            settings = { habitos: true, historico: true, motivacional: true, devocional: true, compras: true };
+            settings = { habitos: true, historico: true, compras: true };
             StorageService.set('planner_settings', settings);
             }
             settingsCheckboxes.forEach(key => {

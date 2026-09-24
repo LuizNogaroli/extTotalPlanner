@@ -27,7 +27,20 @@ class ContentService {
     static async getDevocionalList() {
         return await StorageService.get('planner_devocional') || [];
     }
-    
+
+    // Busca por ID, usada pelo modo "Fixada" dos widgets da página do dia (ver §3.26
+    // do MANUAL_TECNICO.md). Comparação por String() porque o ID é gerado como
+    // Date.now().toString() no cadastro, mas pode chegar como número de um input.
+    static async getMotivacionalById(id) {
+        const list = await this.getMotivacionalList();
+        return list.find(i => String(i.id) === String(id)) || null;
+    }
+
+    static async getDevocionalById(id) {
+        const list = await this.getDevocionalList();
+        return list.find(i => String(i.id) === String(id)) || null;
+    }
+
     static async getShoppingList() {
         return await StorageService.get('planner_compras') || [];
     }
