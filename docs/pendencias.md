@@ -77,7 +77,7 @@ Sempre que possível, o item diz onde está o problema e sugere uma correção. 
 ## 4. Documentação desatualizada
 
 - [ ] **4.1. `extDocumentacao/02-service-worker-mv3.md`** (outro repositório) cita o `background.js` e o `chrome.alarms` deste projeto como exemplo. Os dois foram removidos na v1.33; hoje o motor é client-side (§3.19/§3.23).
-- [ ] **4.2. `docs/ANALISE_MANUTENIBILIDADE.md`** é uma foto de 2026-09-19 (app.js com 2.673 linhas; hoje tem 3.188). Recebeu um aviso no topo na v1.45, mas as métricas não foram refeitas.
+- [ ] **4.2. `docs/ANALISE_MANUTENIBILIDADE.md`** é uma foto de 2026-09-19 (app.js com 2.673 linhas; hoje tem 3.388). Recebeu um aviso no topo na v1.45, mas as métricas não foram refeitas. O próprio documento já sugeria dividir a renderização em módulos se o arquivo passasse de 3.000 linhas — já passou. Plano de extração completo, em fases, registrado em `docs/plano_refatoracao_appjs.md` (v1.49); execução ainda não iniciada.
 - [ ] **4.3. `docs/planejamento_extensao_20260917_2351.md`** é o planejamento original. Vale só como histórico e não reflete o app atual.
 
 ## 5. Validações pendentes na máquina real
@@ -162,3 +162,4 @@ Itens que constavam como pendentes e foram resolvidos. O detalhe está na seçã
 3. **Decisão 2.1 (Tailwind):** define como o tema claro/escuro vai funcionar de verdade no app inteiro.
 4. **Seção 3:** limpeza do código morto e dos scripts avulsos, para reduzir a confusão em sessões futuras.
 5. **Seção 5:** validações na máquina real.
+6. **`docs/plano_refatoracao_appjs.md`:** dividir o `app.js` (3.388 linhas) em módulos, começando pelas fases de baixo risco (0–4). Não bloqueia o resto, mas reduz o atrito entre sessões paralelas trabalhando no mesmo arquivo (ver o episódio que motivou o plano).
