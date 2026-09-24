@@ -1287,7 +1287,18 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
 
     function switchToDailyView(date) {
-        // Como a visualização diária agora é um modal, apenas abrimos o modal correspondente
+        // A Visão Diária não é uma view própria: é o #daily-view-wrapper, que fica DENTRO
+        // de #view-dashboard, ao lado do #weekly-view-wrapper (ver docs/sub-header.md §8
+        // nº1). Se o clique veio de outra tela que também popula dias no sub-header (ex.:
+        // Plano Semanal, via renderPlanoVersionado), #view-dashboard está escondida e o dia
+        // carregaria invisível atrás dela. Nesse caso, trocamos para o Dashboard antes.
+        // Vindo do próprio Dashboard, nada disso roda — mantém breadcrumb/menu como estavam.
+        if (viewDashboard.classList.contains('hidden')) {
+            hideAllViews();
+            viewDashboard.classList.remove('hidden');
+            btnMenuDashboard.classList.add('bg-[var(--border-color)]', 'font-bold');
+            renderDiasNoSubheader(getWeekDates(date));
+        }
         if (window.innerWidth <= 768) document.getElementById('sidebar').classList.add('closed');
         openDailyView(date);
     }

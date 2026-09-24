@@ -19,7 +19,7 @@ Sempre que possível, o item diz onde está o problema e sugere uma correção. 
   - **Categorias de Atividade:** a mesma divergência, entre `planner_atividade-categoria` (tabela de Atividades, dados de exemplo, gerenciador) e `planner_atividade_categoria` (CRUD e seletor do formulário).
   - **Hábitos:** o widget da página do dia e a exportação leem `planner_habito`, com os campos `question`/`category`. O CRUD grava em `planner_habitos`, com `nome`/`descricao`/`frequencia`.
   - **Correção sugerida:** escolher uma chave e um formato por entidade, ajustar todos os leitores e escritores e migrar os dados das duas chaves na primeira leitura, como em `carregarDados()` da Lista de Compras. Depois, testar o ciclo completo: criar → listar → editar → excluir → criar um segundo (§3.18, "Regra para o futuro").
-- [ ] **1.2. No Plano Semanal, clicar num dia do sub-header não abre a Visão Diária** ✔. `openDailyView()` só alterna os blocos semanal/diário, que ficam dentro de `#view-dashboard`, e essa view continua escondida. Correção sugerida: em `switchToDailyView()`, chamar `hideAllViews()`, mostrar `#view-dashboard` e repovoar o sub-header antes de `openDailyView()`. Detalhes em `docs/sub-header.md` §8.
+- [x] ~~1.2. No Plano Semanal, clicar num dia do sub-header não abre a Visão Diária~~ **Corrigido na v1.46.** `switchToDailyView()` agora checa se `#view-dashboard` está escondida e, só nesse caso, chama `hideAllViews()`, mostra `#view-dashboard` e repovoa o sub-header antes de `openDailyView()`. Verificado no navegador nos dois fluxos (a partir do Plano Semanal e a partir do Dashboard, sem regressão). Detalhes em `docs/sub-header.md` §8/§9 e `docs/historico/fix_dia_plano_semanal_invisivel_20260924_0300.md`.
 - [ ] **1.3. Arrastar uma atividade para um dia: a tela não se atualiza** 📖. `_handleDrop` dispara `new CustomEvent('layoutChange')` em `document`, mas os listeners escutam `'layoutChanged'` em `window`. Além disso, no Plano Semanal os dias do sub-header têm `.day-dropzone`, mas não recebem listeners, porque `initDragAndDrop()` só roda em `renderWeeklyGrid()`.
 - [ ] **1.4. "Gerar Relatório" do Diário não mostra nada** 📖. O botão `#btn-report-journal`, no widget Diário da página do dia, desenha o relatório em `#report-content-area`, que fica dentro de `#view-reports`. Essa view continua escondida, porque o handler não troca de tela.
 - [ ] **1.5. Botões 🖨️ "Gerar Relatório A4 do Dia" dos cards de dia não fazem nada** 📖. O `onclick` é só `event.preventDefault()`, em `renderWeeklyGrid()`. Implementar a impressão, ou remover os botões, como foi feito com o "Relatório" do cabeçalho na v1.38.
@@ -150,11 +150,12 @@ Itens que constavam como pendentes e foram resolvidos. O detalhe está na seçã
 - [x] Valores no nível Estratégico (v1.39), hierarquia visual do menu (v1.40) e grupo Recursos (v1.41).
 - [x] Lista de Compras interna, com migração dos dois formatos antigos, Pomodoro e grupo "Outros Sistemas" (v1.43).
 - [x] `rodar.bat`: servidor que travava e porta compartilhada (v1.44).
+- [x] No Plano Semanal, clicar num dia do sub-header não abria a Visão Diária (v1.46).
 
 ---
 **Próximos Passos (sugestão de prioridade):**
 1. **Item 1.1:** chaves divergentes de Contextos, Categorias e Hábitos. Dados cadastrados "somem" da lista.
-2. **Itens 1.2–1.6:** navegação e botões que não fazem nada.
+2. **Itens 1.3–1.6:** navegação e botões que não fazem nada.
 3. **Decisão 2.1 (Tailwind):** define como o tema claro/escuro vai funcionar de verdade no app inteiro.
 4. **Seção 3:** limpeza do código morto e dos scripts avulsos, para reduzir a confusão em sessões futuras.
 5. **Seção 5:** validações na máquina real.

@@ -108,7 +108,7 @@ clique no botão
 ```
 
 - O listener usa `e.target.closest('button')`, porque o clique pode cair num dos `<span>` internos.
-- A Visão Diária **não** é uma view separada. É o `#daily-view-wrapper`, que fica **dentro** de `#view-dashboard`, ao lado do `#weekly-view-wrapper`. `openDailyView()` só alterna entre esses dois; ela não chama `hideAllViews()` nem mostra `#view-dashboard`. Isso importa para o problema nº 1 da §8.
+- A Visão Diária **não** é uma view separada. É o `#daily-view-wrapper`, que fica **dentro** de `#view-dashboard`, ao lado do `#weekly-view-wrapper`. `openDailyView()` só alterna entre esses dois; ela não chama `hideAllViews()` nem mostra `#view-dashboard`. Por isso `switchToDailyView()` (v1.46) checa se `#view-dashboard` está escondida antes de chamar `openDailyView()`: só nesse caso ela troca de tela (`hideAllViews()` + mostra `#view-dashboard` + repovoa o sub-header daquela semana) — ver §8 nº 1 (corrigido) e §9.
 - Voltar para a semana (menu "Meu Planner" ou breadcrumb) chama `renderWeeklyGrid()`, que recria os botões sem nenhum destaque.
 
 ---
@@ -171,7 +171,7 @@ Há dois problemas conhecidos neste fluxo (nºs 2 e 3 da §8).
 
 | # | Ponto | Como foi constatado | Impacto |
 | :---: | :--- | :--- | :--- |
-| 1 | **No Plano Semanal, clicar num dia do sub-header não mostra a Visão Diária.** `openDailyView()` mostra o `#daily-view-wrapper`, mas ele fica dentro de `#view-dashboard`, que continua escondida porque a tela ativa é `#view-planos`. | **Verificado no navegador:** depois do clique, `#view-planos` continua visível e `#view-dashboard`/`#daily-view-wrapper` continuam invisíveis. | O acesso rápido aos dias prometido na v1.31 não funciona a partir do Plano Semanal; só funciona a partir do Dashboard. Correção provável: em `switchToDailyView()`, fazer `hideAllViews()` e mostrar `#view-dashboard` antes de `openDailyView()`, e repovoar o sub-header daquela semana. |
+| ~~1~~ | ~~No Plano Semanal, clicar num dia do sub-header não mostra a Visão Diária.~~ **Corrigido na v1.46** — ver §9. | — | — |
 | 2 | **Drag & drop não funciona nos dias do sub-header dentro do Plano Semanal.** Os botões têm `.day-dropzone`, mas `initDragAndDrop()` só roda em `renderWeeklyGrid()`. | Leitura do código (não testado com arraste real). | No Plano Semanal, soltar uma atividade sobre um dia não faz nada. |
 | 3 | **Depois de soltar uma atividade num dia, a tela não se atualiza.** `_handleDrop` dispara `new CustomEvent('layoutChange')` em `document`, mas os listeners de re-render escutam `'layoutChanged'` em `window`. O nome e o alvo são diferentes. | Leitura do código (não testado com arraste real). | A atividade é gravada na data nova, mas a grade só mostra a mudança depois de outra navegação ou de recarregar. |
 | 4 | Ramo legado `data-date === 'weekly'`, em `openDailyView()` (destaque) e em `_handleDrop` (só faz `console.log` "em desenvolvimento"). | Leitura do código: `renderDiasNoSubheader()` nunca cria esse botão. | É código morto. Resto da antiga aba "Foco da Semana" no cabeçalho. |
@@ -187,6 +187,7 @@ Há dois problemas conhecidos neste fluxo (nºs 2 e 3 da §8).
 | 2026-09-19 | Abas de dia viram `.day-dropzone` (drag & drop) e trocam `['DOM','SEG']` + `uppercase` por `['Dom','Seg']`. Na época ficavam no centro do header. | `historico/layout_header_dnd_20260919_0054.md` |
 | v1.31 | Os 7 dias saem do centro do header e vão para `#dynamic-header-tabs`. Nasce `renderDiasNoSubheader(dates)`, também usada pelo Plano Semanal. Um destaque do dia que nunca funcionava passou a funcionar sem mudança adicional. | `historico/breadcrumb_dashboard_subheader_20260920_0100.md` |
 | v1.35 | Destaque do dia ativo deixa de acumular: o reset agora remove as mesmas classes que o destaque adiciona. | `historico/destaque_dia_ativo_subheader_20260923_2215.md` |
+| v1.46 | Clicar num dia a partir do Plano Semanal passa a abrir a Visão Diária de fato: `switchToDailyView()` troca para `#view-dashboard` antes de `openDailyView()` quando ela não é a tela ativa. | `historico/fix_dia_plano_semanal_invisivel_20260924_0300.md` |
 
 ---
 
@@ -197,7 +198,7 @@ Suba o app com `rodar.bat` (cache desativado; ver §3.11 do `MANUAL_TECNICO.md`)
 - [ ] No Dashboard, aparecem 7 dias de domingo a sábado, batendo com a semana do breadcrumb.
 - [ ] Clicar num dia abre a Visão Diária e só aquele dia fica destacado. Clicar em outro dia move o destaque, sem acumular.
 - [ ] Trocar a semana pelo breadcrumb (Ano ou Mês) atualiza os 7 dias.
-- [ ] No Plano Semanal, os dias são os da semana do plano. *(Hoje clicar num deles não abre a Visão Diária; ver §8 nº 1.)*
+- [ ] No Plano Semanal, os dias são os da semana do plano e clicar num deles abre a Visão Diária (troca para o Dashboard; v1.46, §9).
 - [ ] Nos Planos Anual/Mensal, em Atividades e em Configurações, o sub-header fica vazio.
 - [ ] Arrastar um card para um dia do sub-header realça o botão e move a atividade. *(Hoje a tela não se atualiza sozinha; ver §8 nº 3.)*
 
