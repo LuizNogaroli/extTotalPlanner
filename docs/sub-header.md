@@ -77,7 +77,7 @@ Depois de montar o HTML (`innerHTML`), a função adiciona um listener de clique
 
 ### 3.1. Definição de semana
 
-`getWeekDates(date)` (fim de `app.js`) volta até o **domingo** e devolve os 7 dias a partir dele. A semana vai de **domingo a sábado**, igual ao Dashboard, ao número da semana (`getWeekNumber`) e à chave `YYYY-wWW` do breadcrumb do header.
+`getWeekDates(date)` (`js/modules/dateUtils.js`, desde a v1.50) volta até o **domingo** e devolve os 7 dias a partir dele. A semana vai de **domingo a sábado**, igual ao Dashboard, ao número da semana (`getWeekNumber`) e à chave `YYYY-wWW` do breadcrumb do header.
 
 ### 3.2. Quem chama
 

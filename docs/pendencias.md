@@ -54,7 +54,8 @@ Sempre que possível, o item diz onde está o problema e sugere uma correção. 
 
   Foram superados pela refatoração do CRUD (v1.26–1.28). As versões em uso são as de `js/modules/crud/`.
 - [ ] **3.2. Trechos mortos dentro do `js/app.js`:**
-  - `renderDailyView()`, que nunca é chamada;
+  - ~~`renderDailyView()`, que nunca é chamada~~ — removida na v1.50 (Fase 0 de `docs/plano_refatoracao_appjs.md`);
+  - `renderSidebarTimeline()` e a chamada dela no boot: o `#sidebar-timeline` não existe no HTML, então a função sai no primeiro `if` e nunca desenha nada ✔ (verificado na v1.50). A "timeline na sidebar" foi uma abordagem que o usuário descartou (`historico/breadcrumb_periodo_20260920_0000.md`). Remover — prevista na Fase 8 do plano, como remoção e não migração;
   - a limpeza de `#header-week-tabs` (legado);
   - a variável `tituloCard` em `renderPlanoVersionado()`;
   - os ramos `data-date === 'weekly'` em `openDailyView()` e `_handleDrop`;

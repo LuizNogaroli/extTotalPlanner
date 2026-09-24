@@ -4,6 +4,10 @@
 import { CRUDModal } from './modules/crudModal.js';
 import { ListaCompras, carregarDados as carregarCompras, alternarComprado, esc as escCompras, formatCurrency } from './modules/listaCompras.js';
 import { Pomodoro } from './modules/pomodoro.js';
+import {
+    getWeekNumber, getWeekDates, getPeriodoKey, getPeriodoLabel, getDataDaSemana,
+    getPeriodoPaiKeys, getSemanasDoMes, semanaLabelCompacto, semanaLabelSemAno
+} from './modules/dateUtils.js';
 
 document.addEventListener('DOMContentLoaded', async () => {
     // 1. Inicializar Tema e Acessibilidade
@@ -2691,133 +2695,18 @@ document.addEventListener('DOMContentLoaded', async () => {
     renderSidebarTimeline(new Date().getFullYear());
 });
 
-// Lógica de Datas
-function getWeekNumber(targetDate) {
-    const date = new Date(targetDate.valueOf());
-    const jan1 = new Date(date.getFullYear(), 0, 1);
-    const pastDaysOfYear = (date - jan1) / 86400000;
-    const jan1Day = jan1.getDay();
-    return Math.ceil((pastDaysOfYear + jan1Day + 1) / 7);
-}
-
-function getWeekDates(date = new Date()) {
-    const dayOfWeek = date.getDay(); // 0 é Domingo
-    const sunday = new Date(date);
-    sunday.setDate(date.getDate() - dayOfWeek);
-    const dates = [];
-    for(let i = 0; i < 7; i++) {
-        const current = new Date(sunday);
-        current.setDate(sunday.getDate() + i);
-        dates.push(current);
-    }
-    return dates;
-}
+// Utilitários de data/período (getWeekNumber, getWeekDates, getPeriodoKey…) moram em
+// js/modules/dateUtils.js desde a Fase 1 do plano de refatoração (import no topo).
 
 // ==========================================
 // RENDERIZAÇÃO SEMANAL E DIÁRIA
 // ==========================================
-
-function renderDailyView(date) {
-    const daysOfWeekFull = ['Domingo', 'Segunda-feira', 'Terça-feira', 'Quarta-feira', 'Quinta-feira', 'Sexta-feira', 'Sábado'];
-    const monthsNamesFull = ['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho', 'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'];
-    
-    // Atualiza o Cabeçalho Global (Header)
-    document.getElementById('current-week-display').textContent = `Agenda Diária`;
-    
-    // Atualiza o Título Interno da Agenda
-    const titleStr = `${date.getDate()} de ${monthsNamesFull[date.getMonth()]} de ${date.getFullYear()}, ${daysOfWeekFull[date.getDay()]}`;
-    document.getElementById('daily-view-title').textContent = titleStr;
-}
-
-// Renderiza o esquema "texto único versionado" (atual + histórico) compartilhado
-// entre todos os Planos (Anual, Mensal e Semanal).
-// Deriva a chave do período (ano, mês ou semana) a partir de um timestamp.
-// Semana usa o mesmo cálculo (domingo-sábado) de getWeekNumber()/getWeekDates(),
-// reaproveitado pelo header-week-tabs, para não ter duas numerações de semana no app.
-function getPeriodoKey(timestamp, granularidade) {
-    const d = new Date(timestamp);
-    if (granularidade === 'mes') {
-        return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
-    }
-    if (granularidade === 'semana') {
-        const sunday = getWeekDates(d)[0];
-        const weekNum = getWeekNumber(sunday);
-        return `${sunday.getFullYear()}-w${String(weekNum).padStart(2, '0')}`;
-    }
-    return String(d.getFullYear());
-}
-
-// Rótulo legível do período, ex.: "2026", "Setembro de 2026" ou "Semana 38 de 2026".
-function getPeriodoLabel(key, granularidade) {
-    if (granularidade === 'mes') {
-        const [ano, mes] = key.split('-');
-        const nome = new Date(Number(ano), Number(mes) - 1, 1).toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' });
-        return nome.charAt(0).toUpperCase() + nome.slice(1);
-    }
-    if (granularidade === 'semana') {
-        const [ano, wpart] = key.split('-w');
-        return `Semana ${Number(wpart)} de ${ano}`;
-    }
-    return key;
-}
-
-// Deriva a chave de ano e de mês a partir de uma chave de semana (ex.: "2026-w38"),
-// usada pelo breadcrumb de período para saber a que ano/mês uma semana pertence.
-// Domingo (início) da semana representada por uma chave "2026-w38", aproximado a
-// partir do 1º de janeiro — mesmo esquema de contagem de getWeekNumber().
-function getDataDaSemana(semanaKey) {
-    const [anoStr, wpart] = semanaKey.split('-w');
-    const weekNum = Number(wpart);
-    const jan1 = new Date(Number(anoStr), 0, 1);
-    const sunday = new Date(jan1);
-    sunday.setDate(jan1.getDate() + (weekNum - 1) * 7 - jan1.getDay());
-    return sunday;
-}
-
-function getPeriodoPaiKeys(semanaKey) {
-    const sunday = getDataDaSemana(semanaKey);
-    return {
-        ano: getPeriodoKey(sunday.getTime(), 'ano'),
-        mes: getPeriodoKey(sunday.getTime(), 'mes')
-    };
-}
-
-// Todas as chaves de semana (domingo-sábado) que tocam um mês, na ordem em que ocorrem.
-function getSemanasDoMes(mesKey) {
-    const [ano, mes] = mesKey.split('-').map(Number);
-    const primeiroDia = new Date(ano, mes - 1, 1);
-    const ultimoDia = new Date(ano, mes, 0);
-    const semanas = [];
-    const vistos = new Set();
-    const d = new Date(primeiroDia);
-    while (d <= ultimoDia) {
-        const key = getPeriodoKey(d.getTime(), 'semana');
-        if (!vistos.has(key)) {
-            vistos.add(key);
-            semanas.push(key);
-        }
-        d.setDate(d.getDate() + 1);
-    }
-    return semanas;
-}
 
 // Breadcrumb de navegação Ano › Mês › Semana no cabeçalho, compartilhado pelos 3
 // Planos. Cada segmento abre um dropdown com as opções irmãs daquele nível; clicar
 // numa opção navega direto para o Plano correspondente (anual/mensal/semanal) já
 // com aquele período selecionado. Em telas estreitas os 3 segmentos colapsam num
 // único botão que abre os três níveis empilhados.
-// Rótulo compacto de semana para caber no breadcrumb do cabeçalho: "Sem. 38" (sem o ano,
-// que já aparece no primeiro segmento do breadcrumb).
-// Rótulo curto para o mobile-trigger, onde o espaço é realmente apertado.
-function semanaLabelCompacto(semanaKey) {
-    return `Sem. ${Number(semanaKey.split('-w')[1])}`;
-}
-
-// Rótulo completo sem o ano (que já aparece no primeiro segmento do breadcrumb) —
-// usado no crumb principal e nos dropdowns do desktop, onde há espaço de sobra.
-function semanaLabelSemAno(semanaKey) {
-    return `Semana ${Number(semanaKey.split('-w')[1])}`;
-}
 
 // Container fixo para os dropdowns do breadcrumb, anexado direto ao <body>.
 // Necessário porque header-periodo-buttons vive dentro de uma div com

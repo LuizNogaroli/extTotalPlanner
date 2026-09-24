@@ -2,7 +2,7 @@
 
 **Criado em:** 2026-09-24
 **Responsável:** Claude Code (Sonnet 5) & User
-**Status:** 📋 Planejado, execução ainda não iniciada.
+**Status:** 🔄 Em andamento — Fases 0 e 1 concluídas (v1.50, 2026-09-24). Próxima: Fase 2.
 
 ---
 
@@ -55,7 +55,7 @@ Ordem: do mais isolado/seguro para o mais acoplado/arriscado. **Cada fase é ind
 | 5 | Nível Estratégico | `switchToMissaoView`, `switchToVisaoView`, `switchToValoresView`, `switchToObjetivosView` | ~520 | `js/modules/views/strategic.js` | Médio — 4 funções bem paralelas (quase cópias); dá para extrair e, depois, generalizar |
 | 6 | Tático/Operacional | `renderPlanoVersionado`, `switchToPlanosView`, `switchToAtividadesView`, `renderAtividadesTable`, `seedDemoEstrategicos`, `seedDemoAtividades` | ~570 | `js/modules/views/planos.js` | Médio-alto — `renderPlanoVersionado` é reaproveitada por 3 tipos de plano (anual/mensal/semanal), com bastante lógica de período embutida |
 | 7 | Visão Diária | `openDailyView`, orquestração dos widgets (Compras/Hábitos/Diário), `renderWidgetCompras` | ~350 | `js/modules/dailyView.js` | **Alto** — coração do app, mais acoplado; já depende do módulo de Citação (fase 2) |
-| 8 | Grade Semanal + cabeçalho | `renderWeeklyGrid` (a maior função do arquivo, ~230 linhas), `renderPeriodoBreadcrumb`, `renderDiasNoSubheader`, `getPeriodoDropdownRoot`, `renderSidebarTimeline` | ~440 | `js/modules/weeklyView.js` | **Alto** — muita integração com `docs/header.md`/`docs/sub-header.md` |
+| 8 | Grade Semanal + cabeçalho | `renderWeeklyGrid` (a maior função do arquivo, ~230 linhas), `renderPeriodoBreadcrumb`, `renderDiasNoSubheader`, `getPeriodoDropdownRoot`. **`renderSidebarTimeline` não migra: é removida** (código morto — o `#sidebar-timeline` não existe no HTML; achado na v1.50, `pendencias.md` 3.2) | ~330 | `js/modules/weeklyView.js` | **Alto** — muita integração com `docs/header.md`/`docs/sub-header.md` |
 
 **O que fica em `app.js` no final:** bootstrap (instanciar `ThemeService`/`I18nService`/`CRUDModal`/`ListaCompras`/`Pomodoro`), `hideAllViews()`/roteamento central (`switchToSettings`, `switchToWeeklyView`, `switchToDailyView`, `switchToReportsView`, `switchToExportView`, `switchToStrategicView`), a listener de `crudSave` (que passa a chamar funções importadas dos módulos em vez de definidas ali), e o `window.appRouter` — continua existindo do mesmo jeito, só que reexportando funções importadas.
 
@@ -84,8 +84,8 @@ Ordem: do mais isolado/seguro para o mais acoplado/arriscado. **Cada fase é ind
 
 Marcar aqui conforme cada fase for concluída (não é para editar a tabela da seção 3, que é a referência do plano original).
 
-- [ ] Fase 0 — Remover `renderDailyView()` morta
-- [ ] Fase 1 — `js/modules/dateUtils.js`
+- [x] Fase 0 — Remover `renderDailyView()` morta — **v1.50**
+- [x] Fase 1 — `js/modules/dateUtils.js` — **v1.50** (equivalência verificada em Node: 14.236 comparações, 0 diferenças; `app.js` 3.388 → 3.277 linhas)
 - [ ] Fase 2 — `js/modules/citacao.js`
 - [ ] Fase 3 — `js/modules/managerModal.js` (+ registro de rótulos em `crud/`)
 - [ ] Fase 4 — `js/modules/transferModal.js`

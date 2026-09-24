@@ -125,7 +125,7 @@ Todas as navegações usam chaves em texto:
 | Mês | `YYYY-MM` | `2026-09` | `getPeriodoKey(ts, 'mes')` |
 | Semana | `YYYY-wWW` | `2026-w39` | `getPeriodoKey(ts, 'semana')` |
 
-A **semana vai de domingo a sábado** e usa a mesma conta de `getWeekDates()` e `getWeekNumber()` (fim de `app.js`). É a mesma numeração do Dashboard e do sub-header, então não existem duas contagens de semana no app. Funções auxiliares, todas no nível superior de `app.js`:
+A **semana vai de domingo a sábado** e usa a mesma conta de `getWeekDates()` e `getWeekNumber()`. É a mesma numeração do Dashboard e do sub-header, então não existem duas contagens de semana no app. Funções auxiliares, todas em `js/modules/dateUtils.js` (funções puras, importadas no topo de `app.js` — v1.50; antes ficavam no nível superior de `app.js`):
 
 - `getPeriodoLabel(key, gran)`: "2026", "Setembro de 2026", "Semana 39 de 2026".
 - `getDataDaSemana('2026-w39')`: devolve o domingo daquela semana.
