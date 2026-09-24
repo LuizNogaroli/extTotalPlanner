@@ -63,21 +63,22 @@ export const FORM_REGISTRY = {
   },
 
   // ==================== NOTIFICAÇÕES E LEMBRETES ====================
+  // Schema alinhado aos IDs reais em index.html (form-alarme) e ao que
+  // background.js/renderManagerList (js/app.js) já leem em `planner_alarme`.
   alarme: {
-    storageKey: 'planner_alarmes',
+    storageKey: 'planner_alarme',
     formId: 'form-alarme',
-    fields: ['id', 'createdAt', 'titulo', 'descricao', 'tipo', 'data', 'hora', 'recorrencia', 'diasemana', 'ativo'],
+    fields: ['id', 'title', 'time', 'recurrence', 'date', 'weekdays'],
     titles: { create: 'Novo Alarme', edit: 'Editar Alarme' },
-    requires: ['titulo', 'tipo'],
+    requires: ['title', 'time'],
     conditionalFields: {
-      recorrencia: {
-        'unica': ['data', 'hora'],
-        'diaria': ['hora'],
-        'semanal': ['hora', 'diasemana'],
-        'mensal': ['hora']
+      recurrence: {
+        'diario': [],
+        'unico': ['date'],
+        'semanal': ['weekdays']
       }
     },
-    defaults: { recorrencia: 'unica', ativo: true }
+    defaults: { recurrence: 'diario', time: '20:00' }
   },
 
   // ==================== MOTIVACIONAL ====================
@@ -128,6 +129,16 @@ export const FORM_REGISTRY = {
     titles: { create: 'Definir Visão', edit: 'Editar Visão' },
     requires: ['content'],
     defaults: { type: 'visao' },
+    selfManaged: true // Gerenciado manualmente em app.js
+  },
+
+  valores: {
+    storageKey: 'planner_strategies',
+    formId: 'form-valores',
+    fields: ['id', 'createdAt', 'content'],
+    titles: { create: 'Definir Valores', edit: 'Editar Valores' },
+    requires: ['content'],
+    defaults: { type: 'valores' },
     selfManaged: true // Gerenciado manualmente em app.js
   },
 

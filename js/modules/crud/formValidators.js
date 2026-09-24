@@ -129,29 +129,28 @@ export class FormValidators {
   static validateAlarme(data) {
     const errors = {};
 
-    if (data.tipo && !['notificacao', 'lembretes', 'planejamento'].includes(data.tipo)) {
-      errors.tipo = 'Tipo de alarme inválido';
+    // Validar hora (obrigatória, formato HH:mm)
+    if (data.time && !this.isValidTime(data.time)) {
+      errors.time = 'Hora inválida (use formato HH:mm)';
     }
 
-    // Validar hora se fornecida (HH:mm)
-    if (data.hora && !this.isValidTime(data.hora)) {
-      errors.hora = 'Hora inválida (use formato HH:mm)';
+    // Recorrência 'único' exige uma data válida
+    if (data.recurrence === 'unico') {
+      if (!data.date) {
+        errors.date = 'Data é obrigatória para alarme único';
+      } else if (!this.isValidDate(data.date)) {
+        errors.date = 'Data inválida';
+      }
     }
 
-    // Validar data se fornecida
-    if (data.data && !this.isValidDate(data.data)) {
-      errors.data = 'Data inválida';
-    }
-
-    // Dias da semana válidos se recorrência é semanal
-    if (data.recorrencia === 'semanal' && data.diasemana) {
-      const dias = Array.isArray(data.diasemana) ? data.diasemana : [data.diasemana];
-      const validDays = ['segunda', 'terca', 'quarta', 'quinta', 'sexta', 'sabado', 'domingo'];
-      for (const dia of dias) {
-        if (!validDays.includes(dia)) {
-          errors.diasemana = 'Dia da semana inválido';
-          break;
-        }
+    // Recorrência 'semanal' exige ao menos um dia da semana selecionado
+    if (data.recurrence === 'semanal') {
+      const dias = Array.isArray(data.weekdays) ? data.weekdays : [];
+      const validDays = ['0', '1', '2', '3', '4', '5', '6'];
+      if (dias.length === 0) {
+        errors.weekdays = 'Selecione ao menos um dia da semana';
+      } else if (dias.some(d => !validDays.includes(d))) {
+        errors.weekdays = 'Dia da semana inválido';
       }
     }
 

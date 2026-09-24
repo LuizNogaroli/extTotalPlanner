@@ -10,7 +10,7 @@ import { FormLoaders } from './crud/formLoaders.js';
 
 // Tipos cuja persistência é feita externamente (listener de 'crudSave')
 // Possuem lógica de versionamento/período customizada em app.js
-const SELF_MANAGED_TYPES = ['missao', 'visao', 'objetivos', 'plano_anual', 'plano_mensal', 'plano_semanal'];
+const SELF_MANAGED_TYPES = ['missao', 'visao', 'valores', 'objetivos', 'plano_anual', 'plano_mensal', 'plano_semanal'];
 
 export class CRUDModal {
   constructor(modalElement, modalTitleElement, StorageService) {
@@ -107,6 +107,11 @@ export class CRUDModal {
     // Coletar dados do formulário
     const form = document.getElementById(getFormConfig(type).formId);
     const formData = FormLoaders.extractFormData(type, form);
+
+    // Novo registro (campo id oculto vem vazio do form): gera um id único
+    if (!formData.id) {
+      formData.id = Date.now().toString();
+    }
 
     // Validar dados
     const validation = FormValidators.validate(type, formData);

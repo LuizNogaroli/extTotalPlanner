@@ -109,18 +109,18 @@ export class FormLoaders {
    * Mostrar/esconder campos baseado na recorrência selecionada
    */
   static handleAlarmeConditionals(form, data) {
-    const recorrenciaSelect = form.querySelector('#alarme-recorrencia');
-    const dataContainer = form.querySelector('#alarme-data-container');
+    const recurrenceSelect = form.querySelector('#alarme-recurrence');
+    const dateContainer = form.querySelector('#alarme-date-container');
     const weekdaysContainer = form.querySelector('#alarme-weekdays-container');
 
-    if (!recorrenciaSelect) return;
+    if (!recurrenceSelect) return;
 
     const updateVisibility = () => {
-      const value = recorrenciaSelect.value;
+      const value = recurrenceSelect.value;
 
       // Mostrar/esconder Data
-      if (dataContainer) {
-        dataContainer.classList.toggle('hidden', value !== 'unica');
+      if (dateContainer) {
+        dateContainer.classList.toggle('hidden', value !== 'unico');
       }
 
       // Mostrar/esconder Dias da semana
@@ -133,7 +133,13 @@ export class FormLoaders {
     updateVisibility();
 
     // Executar ao mudar
-    recorrenciaSelect.addEventListener('change', updateVisibility);
+    recurrenceSelect.addEventListener('change', updateVisibility);
+
+    // Marcar checkboxes de dias da semana (modo edição)
+    const selectedWeekdays = (data && data.weekdays) || [];
+    form.querySelectorAll('.alarme-weekday-checkbox').forEach(cb => {
+      cb.checked = selectedWeekdays.includes(cb.value);
+    });
   }
 
   /**
@@ -175,6 +181,12 @@ export class FormLoaders {
     const data = {};
 
     for (const field of config.fields) {
+      // Caso especial: grupo de checkboxes de dias da semana do Alarme
+      if (type === 'alarme' && field === 'weekdays') {
+        data.weekdays = Array.from(form.querySelectorAll('.alarme-weekday-checkbox:checked')).map(cb => cb.value);
+        continue;
+      }
+
       const inputId = `${type}-${field}`;
       const input = form.querySelector(`#${inputId}`);
 
