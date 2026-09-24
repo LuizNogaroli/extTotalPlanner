@@ -53,12 +53,14 @@ export const FORM_REGISTRY = {
   },
 
   // ==================== HISTÓRICO E REFERÊNCIA ====================
+  // Schema alinhado aos IDs reais em index.html (form-historico: historico-date,
+  // historico-fato) e ao que renderManagerList() em js/app.js já lê (item.date, item.fato).
   historico: {
     storageKey: 'planner_historico',
     formId: 'form-historico',
-    fields: ['id', 'createdAt', 'data', 'titulo', 'descricao', 'tipo'],
+    fields: ['id', 'createdAt', 'date', 'fato'],
     titles: { create: 'Novo Registro de Histórico', edit: 'Editar Histórico' },
-    requires: ['data', 'titulo'],
+    requires: ['date', 'fato'],
     defaults: {}
   },
 

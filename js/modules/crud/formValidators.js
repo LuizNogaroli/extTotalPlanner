@@ -115,12 +115,12 @@ export class FormValidators {
   static validateHistorico(data) {
     const errors = {};
 
-    if (data.data && !this.isValidDate(data.data)) {
-      errors.data = 'Data inválida';
+    if (data.date && !this.isValidDate(data.date)) {
+      errors.date = 'Data inválida';
     }
 
-    if (data.titulo && data.titulo.trim().length === 0) {
-      errors.titulo = 'Título não pode estar vazio';
+    if (data.fato && data.fato.trim().length === 0) {
+      errors.fato = 'Fato não pode estar vazio';
     }
 
     return errors;
