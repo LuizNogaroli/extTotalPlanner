@@ -2,6 +2,8 @@
 
 // Importar módulos de CRUD
 import { CRUDModal } from './modules/crudModal.js';
+import { ListaCompras, carregarDados as carregarCompras, alternarComprado, esc as escCompras, formatCurrency } from './modules/listaCompras.js';
+import { Pomodoro } from './modules/pomodoro.js';
 
 document.addEventListener('DOMContentLoaded', async () => {
     // 1. Inicializar Tema e Acessibilidade
@@ -19,6 +21,14 @@ document.addEventListener('DOMContentLoaded', async () => {
         document.getElementById('modal-title'),
         StorageService
     );
+
+    // 4. Iniciar motor de verificação de Alarmes (Notification API padrão — ver docs/MANUAL_TECNICO.md §3.18/3.19)
+    window.NotificationService.start();
+
+    // 5. Recursos: Lista de Compras e Pomodoro (módulos próprios; o Pomodoro roda em segundo plano)
+    const listaCompras = new ListaCompras({ StorageService, hideAllViews, onChange: () => renderWidgetCompras() });
+    const pomodoro = new Pomodoro({ hideAllViews });
+    pomodoro.iniciarMotor();
 
     // O roteamento inicial é feito no final deste bloco.
 
@@ -60,13 +70,17 @@ document.addEventListener('DOMContentLoaded', async () => {
     let btnVoltarMissaoListenersAttached = false;
     let btnVoltarVisaoListenersAttached = false;
     let btnVoltarObjetivosListenersAttached = false;
-    let currentStrategicSection = null; // 'missao' | 'visao' | 'objetivos'
+    let btnVoltarValoresListenersAttached = false;
+    let currentStrategicSection = null; // 'missao' | 'visao' | 'objetivos' | 'valores'
     let currentPlanosTab = 'anual'; // 'anual' | 'mensal' | 'semanal'
     let planosPeriodoSelecionado = {}; // { plano_anual: '2026', plano_mensal: '2026-09' } período em exibição por tipo
 
     document.getElementById('menu-missao').addEventListener('click', switchToMissaoView);
     document.getElementById('menu-visao').addEventListener('click', switchToVisaoView);
     document.getElementById('menu-objetivos').addEventListener('click', switchToObjetivosView);
+    document.getElementById('menu-valores').addEventListener('click', switchToValoresView);
+    document.getElementById('menu-pomodoro').addEventListener('click', () => pomodoro.abrir());
+    document.getElementById('menu-compras').addEventListener('click', () => listaCompras.abrir());
     document.getElementById('menu-plano-anual').addEventListener('click', () => switchToPlanosView('anual'));
     document.getElementById('menu-plano-mensal').addEventListener('click', () => switchToPlanosView('mensal'));
     document.getElementById('menu-plano-semanal').addEventListener('click', () => switchToPlanosView('semanal'));
@@ -335,6 +349,119 @@ document.addEventListener('DOMContentLoaded', async () => {
                 btnVoltarVisaoBottom.addEventListener('click', voltarParaVisao);
             }
             btnVoltarVisaoListenersAttached = true;
+        }
+    }
+
+    // Mesmo esquema da Visão (texto único versionado: atual + versões anteriores).
+    // Diferenças: o conteúdo é escapado antes de ir para o innerHTML e as quebras de
+    // linha são preservadas (whitespace-pre-line), já que valores costumam ser uma lista.
+    async function switchToValoresView() {
+        currentStrategicSection = 'valores';
+        headerTitle.textContent = "Declaração de Valores";
+        hideAllViews();
+        viewStrategic.classList.remove('hidden');
+        viewStrategic.classList.add('flex');
+
+        const contentArea = document.getElementById('strategic-content-cards');
+        contentArea.innerHTML = '<span class="animate-pulse">Carregando valores...</span>';
+
+        const esc = (str) => String(str).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+
+        const strategies = await StorageService.get('planner_strategies') || [];
+        const valoresRecords = strategies.filter(s => s.type === 'valores').sort((a, b) => b.timestamp - a.timestamp);
+
+        const botoesHtml = `
+            <div class="flex justify-end gap-3 mb-6">
+                <button id="btn-educacional-valores" class="px-4 py-2 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700 transition-all flex items-center gap-2">
+                    📚 Educacional
+                </button>
+                <button id="btn-new-valores" class="px-4 py-2 bg-[var(--primary-color)] text-white rounded-lg font-semibold hover:bg-[var(--primary-color)]/90 transition-all">
+                    ✏️ Atualizar Valores
+                </button>
+            </div>
+        `;
+
+        if (valoresRecords.length === 0) {
+            contentArea.innerHTML = `
+                ${botoesHtml}
+                <div class="text-[var(--text-secondary)] italic">Nenhuma declaração de valores cadastrada ainda.</div>
+            `;
+        } else {
+            const latest = valoresRecords[0];
+            const dateStr = new Date().toLocaleDateString('pt-BR', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+            const anteriores = valoresRecords.slice(1);
+
+            contentArea.innerHTML = `
+                ${botoesHtml}
+
+                <div class="bg-gradient-to-br from-[var(--primary-color)] via-[var(--primary-color)]/90 to-[var(--primary-color)]/75 p-8 rounded-xl mb-8 shadow-lg border border-white/10">
+                    <div class="mb-6">
+                        <h2 class="text-3xl font-bold text-white mb-1" style="text-shadow: 0 3px 8px rgba(0,0,0,0.5), 0 1px 3px rgba(0,0,0,0.3);">Valores Atuais</h2>
+                        <p class="text-lg font-semibold text-white/95 capitalize" style="text-shadow: 0 2px 6px rgba(0,0,0,0.4);">${dateStr}</p>
+                    </div>
+
+                    <div class="bg-white p-6 rounded-lg border border-white/20 shadow-md">
+                        <p class="text-lg text-[var(--text-primary)] mb-6 leading-relaxed font-semibold whitespace-pre-line">${esc(latest.content)}</p>
+                        <div class="flex items-center text-sm text-[var(--text-secondary)]">
+                            <span class="mr-2">📅</span>
+                            <span>Definidos em: ${new Date(latest.timestamp).toLocaleString('pt-BR')}</span>
+                        </div>
+                    </div>
+                </div>
+
+                ${anteriores.length > 0 ? `
+                <div class="bg-[var(--bg-panel)] p-8 rounded-xl border border-[var(--border-color)] shadow-md">
+                    <h3 class="text-2xl font-bold mb-8 text-[var(--primary-color)] flex items-center">
+                        <span class="mr-3">📜</span>
+                        Valores (versões anteriores)
+                    </h3>
+                    <div class="space-y-3">
+                        ${anteriores.map(v => {
+                            const excerpt = v.content.substring(0, 80) + (v.content.length > 80 ? '...' : '');
+                            const daysAgo = Math.floor((new Date() - new Date(v.timestamp)) / (1000 * 60 * 60 * 24));
+                            return `
+                                <div class="bg-gradient-to-r from-white/5 to-white/0 hover:from-white/10 hover:to-white/5 p-5 rounded-lg border border-[var(--border-color)] transition-all cursor-pointer group" title="${esc(v.content)}">
+                                    <div class="flex justify-between items-start gap-4">
+                                        <div class="flex-1">
+                                            <div class="text-sm text-[var(--text-secondary)] font-medium mb-1">
+                                                ${new Date(v.timestamp).toLocaleString('pt-BR')}
+                                                <span class="text-xs text-[var(--text-secondary)]/70">(há ${daysAgo} dias)</span>
+                                            </div>
+                                            <p class="text-[var(--text-primary)] group-hover:text-[var(--primary-color)] transition-colors whitespace-pre-line">${esc(excerpt)}</p>
+                                        </div>
+                                        <span class="text-xl opacity-0 group-hover:opacity-100 transition-opacity">→</span>
+                                    </div>
+                                </div>
+                            `;
+                        }).join('')}
+                    </div>
+                </div>
+                ` : ''}
+            `;
+        }
+
+        document.getElementById('btn-new-valores').addEventListener('click', () => {
+            crudModal.open('valores');
+        });
+
+        document.getElementById('btn-educacional-valores').addEventListener('click', () => {
+            hideAllViews();
+            const view = document.getElementById('view-valores-educacional');
+            view.classList.remove('hidden');
+            view.classList.add('flex');
+            view.scrollTop = 0;
+        });
+
+        // Botões de voltar da página educacional (elementos estáticos: listener registrado uma única vez)
+        if (!btnVoltarValoresListenersAttached) {
+            const voltarParaValores = () => {
+                hideAllViews();
+                viewStrategic.classList.remove('hidden');
+                viewStrategic.classList.add('flex');
+            };
+            document.getElementById('btn-voltar-valores').addEventListener('click', voltarParaValores);
+            document.getElementById('btn-voltar-valores-bottom').addEventListener('click', voltarParaValores);
+            btnVoltarValoresListenersAttached = true;
         }
     }
 
@@ -1052,7 +1179,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
 
     function hideAllViews() {
-        const viewIds = ['view-dashboard', 'view-settings', 'view-reports', 'view-strategic', 'view-export', 'view-missao-educacional', 'view-visao-educacional', 'view-objetivos-educacional', 'view-planos', 'view-atividades', 'weekly-view-wrapper', 'daily-view-wrapper'];
+        const viewIds = ['view-dashboard', 'view-settings', 'view-reports', 'view-strategic', 'view-export', 'view-missao-educacional', 'view-visao-educacional', 'view-objetivos-educacional', 'view-valores-educacional', 'view-planos', 'view-atividades', 'view-compras', 'view-pomodoro', 'weekly-view-wrapper', 'daily-view-wrapper'];
         viewIds.forEach(id => {
             const el = document.getElementById(id);
             if (el) {
@@ -1186,6 +1313,55 @@ document.addEventListener('DOMContentLoaded', async () => {
         }
     });
 
+    // Permissão de Notificações (3 estados): o mesmo estado aparece em Configurações e no
+    // gerenciador de Alarmes, que é onde o usuário lida com o recurso.
+    const btnNotificationsPermission = document.getElementById('btn-notifications-permission');
+    const btnAlarmePermissao = document.getElementById('btn-alarme-permissao');
+    const btnAlarmeTestar = document.getElementById('btn-alarme-testar');
+    const ajudaNotificacoes = document.getElementById('manager-notificacoes-ajuda');
+    const AJUDA_NOTIFICACOES = {
+        default: 'Ative as notificações para os alarmes aparecerem no horário programado.',
+        granted: 'Os alarmes avisam no horário enquanto houver uma aba do Total Planner aberta. Com a aba em segundo plano ou o PC suspenso, o aviso sai com até 10 min de atraso. O som toca se você tiver clicado nesta aba antes.',
+        denied: 'O navegador está bloqueando as notificações: clique no ícone à esquerda da barra de endereço → Notificações → Permitir, e recarregue a página.',
+        unsupported: 'Este navegador não suporta notificações.'
+    };
+
+    // O build local do Tailwind não tem "disabled:opacity-50" (MANUAL_TECNICO §3.21)
+    function setBotaoDesabilitado(btn, disabled) {
+        btn.disabled = disabled;
+        btn.classList.toggle('opacity-50', disabled);
+        btn.classList.toggle('cursor-not-allowed', disabled);
+    }
+
+    function renderNotificacoesUI() {
+        const status = window.NotificationService.getPermission();
+        const info = window.NotificationService.describePermission(status);
+        [btnNotificationsPermission, btnAlarmePermissao].forEach(btn => {
+            if (!btn) return;
+            btn.textContent = info.label;
+            btn.title = info.title;
+            setBotaoDesabilitado(btn, info.disabled);
+        });
+        if (btnAlarmeTestar) setBotaoDesabilitado(btnAlarmeTestar, status !== 'granted');
+        if (ajudaNotificacoes) ajudaNotificacoes.textContent = AJUDA_NOTIFICACOES[status] || '';
+    }
+
+    async function pedirPermissaoNotificacoes() {
+        await window.NotificationService.requestPermission();
+        renderNotificacoesUI();
+        window.NotificationService.checkAlarms();
+    }
+
+    renderNotificacoesUI();
+    [btnNotificationsPermission, btnAlarmePermissao].forEach(btn => {
+        if (btn) btn.addEventListener('click', pedirPermissaoNotificacoes);
+    });
+    if (btnAlarmeTestar) {
+        btnAlarmeTestar.addEventListener('click', () => {
+            if (!window.NotificationService.test()) renderNotificacoesUI();
+        });
+    }
+
     const sidebar = document.getElementById('sidebar');
     if (window.innerWidth <= 768) sidebar.classList.add('closed');
     document.getElementById('btn-toggle-sidebar').addEventListener('click', () => sidebar.classList.toggle('closed'));
@@ -1195,15 +1371,10 @@ document.addEventListener('DOMContentLoaded', async () => {
     // ==========================================
     const btnCloseModal = document.getElementById('btn-close-modal');
     const btnsCancelModal = document.querySelectorAll('.btn-cancel-modal');
-    const btnNewActivity = document.getElementById('btn-new-activity');
 
     // Registrar listeners dos botões de fechar o modal
     btnCloseModal.addEventListener('click', () => crudModal.close());
     btnsCancelModal.forEach(btn => btn.addEventListener('click', () => crudModal.close()));
-
-    if (btnNewActivity) {
-        btnNewActivity.addEventListener('click', () => crudModal.open('atividade'));
-    }
 
     // Listener para evento de salvamento do CRUDModal
     document.addEventListener('crudSave', async (e) => {
@@ -1252,8 +1423,13 @@ document.addEventListener('DOMContentLoaded', async () => {
             else if (currentManagerType === 'estrategia') renderManagerList();
         } else if (['historico', 'motivacional', 'devocional', 'compras'].includes(type) && currentManagerType === type) {
             renderManagerList();
-        } else if (type === 'alarme' && currentManagerType === 'alarme') {
-            renderManagerList();
+        } else if (type === 'alarme') {
+            // Horários que já passaram não devem disparar agora só por causa da tolerância de atraso
+            window.NotificationService.markHandled(formData);
+            // Salvar um alarme é um gesto do usuário: se a permissão ainda não foi decidida, pede agora
+            if (window.NotificationService.getPermission() === 'default') await pedirPermissaoNotificacoes();
+            // Volta para a lista de alarmes (o "+ Novo Item" fecha o gerenciador ao abrir o formulário)
+            if (currentManagerType === 'alarme') openManager('alarme');
         } else if (type === 'missao') {
             // Processar nova missão: mover atual para histórico
             const strategies = await StorageService.get('planner_strategies') || [];
@@ -1313,6 +1489,21 @@ document.addEventListener('DOMContentLoaded', async () => {
             // Recarregar página de visão se estiver visível
             if (!viewStrategic.classList.contains('hidden') && currentStrategicSection === 'visao') {
                 switchToVisaoView();
+            }
+        } else if (type === 'valores') {
+            // Cada envio cria uma nova versão; a "atual" é a de timestamp mais recente
+            // (switchToValoresView ordena por timestamp), as demais viram histórico.
+            const strategies = await StorageService.get('planner_strategies') || [];
+            strategies.push({
+                id: Date.now().toString(),
+                type: 'valores',
+                content: formData.content,
+                timestamp: new Date().getTime()
+            });
+            await StorageService.set('planner_strategies', strategies);
+
+            if (!viewStrategic.classList.contains('hidden') && currentStrategicSection === 'valores') {
+                switchToValoresView();
             }
         } else if (type === 'objetivos') {
             // Processar novo objetivo: mover atual (do mesmo prazo) para histórico
@@ -1399,8 +1590,10 @@ document.addEventListener('DOMContentLoaded', async () => {
             'alarme': 'Lembretes e Alarmes'
         };
         managerTitle.textContent = titles[type] || 'Gerenciar';
+        document.getElementById('manager-notificacoes').classList.toggle('hidden', type !== 'alarme');
+        if (type === 'alarme') renderNotificacoesUI(); // a permissão pode ter mudado fora do app
         managerModal.classList.remove('hidden');
-        
+
         await renderManagerList();
     }
 
@@ -1427,7 +1620,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                 const cat = item.categoria ? `[${item.categoria}] ` : '';
                 titleText = `${cat}${item.item} (${item.detalhes || 'Sem detalhes'})`;
             } else if (type === 'estrategia') {
-                const mapType = { 'missao': 'Missão', 'visao': 'Visão', 'obj_curto': 'Curto Prazo', 'obj_medio': 'Médio Prazo', 'obj_longo': 'Longo Prazo' };
+                const mapType = { 'missao': 'Missão', 'visao': 'Visão', 'valores': 'Valores', 'obj_curto': 'Curto Prazo', 'obj_medio': 'Médio Prazo', 'obj_longo': 'Longo Prazo' };
                 const dt = item.date ? `[${item.date}] ` : '';
                 titleText = `${dt}[${mapType[item.type] || item.type}] ${item.content.substring(0,40)}...`;
             } else if (type === 'habito') {
@@ -1455,7 +1648,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             
             li.querySelector('.btn-edit').addEventListener('click', () => {
                 managerModal.classList.add('hidden'); // Opcional, ou deixa aberto atrás
-                openModal(type, item);
+                crudModal.open(type, item);
             });
             
             li.querySelector('.btn-delete').addEventListener('click', async () => {
@@ -1474,7 +1667,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     btnManagerAdd.addEventListener('click', () => {
         managerModal.classList.add('hidden');
-        openModal(currentManagerType);
+        crudModal.open(currentManagerType);
     });
 
     // ==========================================
@@ -1516,7 +1709,12 @@ document.addEventListener('DOMContentLoaded', async () => {
         const dayStr = `${dateObj.getDate().toString().padStart(2, '0')}/${(dateObj.getMonth()+1).toString().padStart(2, '0')}`;
         currentDailyDateStr = `${dateObj.getFullYear()}-${String(dateObj.getMonth() + 1).padStart(2, '0')}-${String(dateObj.getDate()).padStart(2, '0')}`;
         
-        const mvt = document.getElementById("main-view-title"); if(mvt) mvt.textContent = `${daysOfWeekFull[dateObj.getDay()]} (${dayStr})`; document.getElementById("daily-view-title").classList.add("hidden");
+        const mvt = document.getElementById("main-view-title"); if(mvt) mvt.textContent = `${daysOfWeekFull[dateObj.getDay()]} (${dayStr})`;
+
+        // Título da página do dia, na mesma linha do "+ Nova Atividade": "Qua - 23/09"
+        const dailyTitle = document.getElementById('daily-view-title');
+        dailyTitle.textContent = `${['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'][dateObj.getDay()]} - ${dayStr}`;
+        dailyTitle.classList.remove('hidden');
         
         if (!htmlContent) {
             const activities = await StorageService.get('planner_activities') || [];
@@ -1581,13 +1779,11 @@ document.addEventListener('DOMContentLoaded', async () => {
                 btn.classList.remove('bg-[var(--primary-color)]', 'text-white');
                 btn.classList.add('text-[var(--primary-color)]', 'hover:bg-[var(--border-color)]');
             } else {
-                btn.classList.remove('bg-[var(--primary-color)]', 'text-white', 'border-[var(--primary-color)]');
-                btn.classList.add('text-[var(--text-secondary)]', 'border-transparent');
-                
-                if(btn.dataset.date === currentDailyDateStr) {
-                    btn.classList.add('border-[var(--primary-color)]', 'text-[var(--primary-color)]', 'bg-[var(--bg-color)]');
-                    btn.classList.remove('text-[var(--text-secondary)]', 'border-transparent');
-                }
+                const activeClasses = ['border-[var(--primary-color)]', 'text-[var(--primary-color)]', 'bg-[var(--bg-color)]'];
+                const inactiveClasses = ['text-[var(--text-secondary)]', 'border-transparent'];
+                const isActive = btn.dataset.date === currentDailyDateStr;
+                btn.classList.remove(...(isActive ? inactiveClasses : activeClasses));
+                btn.classList.add(...(isActive ? activeClasses : inactiveClasses));
             }
         });
 
@@ -1681,31 +1877,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         const compContainer = document.getElementById('widget-container-compras');
         if (settings.compras) {
             compContainer.style.display = 'flex';
-            const compWidget = document.getElementById('widget-compras-content');
-            compWidget.innerHTML = '<li class="animate-pulse italic opacity-50">Carregando itens...</li>';
-            const compData = await window.ContentService.getShoppingList();
-            if (compData && compData.length > 0) {
-                compWidget.innerHTML = compData.map(c => `
-                    <li class="flex justify-between items-center space-x-3 p-1 hover:bg-[var(--bg-color)] rounded border-b border-[var(--border-color)] border-opacity-50 last:border-0">
-                        <div class="flex items-center space-x-3">
-                            <input type="checkbox" class="rounded w-4 h-4 border-[var(--border-color)]"> 
-                            <span class="${c.detalhes ? 'font-semibold' : ''}">${c.item}</span>
-                            ${c.categoria ? `<span class="text-[10px] font-bold uppercase tracking-wider text-[var(--primary-color)] opacity-70 border border-[var(--primary-color)] px-1 rounded-sm">${c.categoria}</span>` : ''}
-                        </div>
-                        ${c.detalhes ? `<span class="text-xs text-[var(--text-secondary)] bg-[var(--bg-panel)] px-2 py-0.5 rounded border border-[var(--border-color)]">${c.detalhes}</span>` : ''}
-                    </li>
-                `).join('');
-                compWidget.innerHTML += `
-                    <li class="flex items-center space-x-3 p-1 mt-2 hover:bg-[var(--bg-color)] rounded text-[var(--text-secondary)] italic opacity-80 cursor-pointer" onclick="window.appRouter.openManager('compras')">
-                        <span class="text-[var(--primary-color)] font-bold text-lg leading-none">+</span> <span>adicionar item</span>
-                    </li>`;
-            } else {
-                compWidget.innerHTML = `
-                    <li class="italic text-[var(--text-secondary)]">Sua lista está vazia.</li>
-                    <li class="flex items-center space-x-3 p-1 mt-2 hover:bg-[var(--bg-color)] rounded text-[var(--text-secondary)] cursor-pointer text-sm font-semibold" onclick="window.appRouter.openManager('compras')">
-                        <span class="text-[var(--primary-color)] font-bold text-lg leading-none">+</span> <span>adicionar item</span>
-                    </li>`;
-            }
+            await renderWidgetCompras();
         } else {
             compContainer.style.display = 'none';
         }
@@ -1757,8 +1929,54 @@ document.addEventListener('DOMContentLoaded', async () => {
     
     btnDayModalNew.addEventListener('click', () => {
         dayModal.classList.add('hidden');
-        openModal('atividade');
+        crudModal.open('atividade');
     });
+
+    // ==== WIDGET "COMPRAS" DA PÁGINA DO DIA ====
+    // Mostra só os itens ainda não comprados da Lista de Compras (js/modules/listaCompras.js).
+    // Marcar a caixa grava "comprado" na própria lista; os links levam à página da lista.
+    async function renderWidgetCompras() {
+        const compWidget = document.getElementById('widget-compras-content');
+        if (!compWidget) return;
+
+        const { produtos, categorias } = await carregarCompras(StorageService);
+        const pendentes = produtos.filter(p => !p.purchased);
+        const nomeCategoria = (id) => categorias.find(c => c.id === id)?.name;
+        const MAX_ITENS = 8;
+
+        const linhas = pendentes.slice(0, MAX_ITENS).map(p => {
+            const cat = nomeCategoria(p.categoryId);
+            return `
+            <li class="flex justify-between items-center space-x-3 p-1 hover:bg-[var(--bg-color)] rounded border-b border-[var(--border-color)] border-opacity-50 last:border-0">
+                <div class="flex items-center space-x-3 min-w-0">
+                    <input type="checkbox" class="rounded w-4 h-4 border-[var(--border-color)] cursor-pointer" title="Marcar como comprado" data-compra-comprado="${escCompras(p.id)}">
+                    <span class="truncate cursor-pointer" data-compra-abrir>${escCompras(p.name)}</span>
+                    ${cat ? `<span class="text-[10px] font-bold uppercase tracking-wider text-[var(--primary-color)] opacity-70 border border-[var(--primary-color)] px-1 rounded-sm">${escCompras(cat)}</span>` : ''}
+                </div>
+                ${p.estimatedPrice != null ? `<span class="text-xs text-[var(--text-secondary)] whitespace-nowrap">${formatCurrency(p.estimatedPrice)}</span>` : ''}
+            </li>`;
+        }).join('');
+
+        const vazio = produtos.length === 0 ? 'Sua lista está vazia.' : 'Tudo comprado! 🎉';
+        const extra = pendentes.length > MAX_ITENS ? `<li class="text-xs text-[var(--text-secondary)] italic p-1">+ ${pendentes.length - MAX_ITENS} ${pendentes.length - MAX_ITENS === 1 ? 'item' : 'itens'} na lista</li>` : '';
+
+        compWidget.innerHTML = `
+            ${linhas || `<li class="italic text-[var(--text-secondary)]">${vazio}</li>`}
+            ${extra}
+            <li class="flex items-center space-x-3 p-1 mt-2 hover:bg-[var(--bg-color)] rounded text-[var(--text-secondary)] cursor-pointer text-sm font-semibold" data-compra-novo>
+                <span class="text-[var(--primary-color)] font-bold text-lg leading-none">+</span> <span>adicionar item</span>
+            </li>
+            <li class="p-1 text-xs text-[var(--primary-color)] cursor-pointer hover:underline" data-compra-abrir>Ver lista completa (${produtos.length}) →</li>`;
+
+        compWidget.querySelectorAll('[data-compra-comprado]').forEach(cb => {
+            cb.addEventListener('change', async () => {
+                await alternarComprado(StorageService, cb.dataset.compraComprado);
+                renderWidgetCompras();
+            });
+        });
+        compWidget.querySelectorAll('[data-compra-abrir]').forEach(el => el.addEventListener('click', () => listaCompras.abrir()));
+        compWidget.querySelector('[data-compra-novo]').addEventListener('click', () => listaCompras.abrir({ novoItem: true }));
+    }
 
     // ==== AUTOSAVE DO DIÁRIO ====
     const journalInput = document.getElementById('daily-journal-input');
@@ -1873,6 +2091,10 @@ document.addEventListener('DOMContentLoaded', async () => {
             } else if (moduleKey === 'planner_habits_log') {
                 const habitsData = await StorageService.get('planner_habits_log') || {};
                 items = Object.keys(habitsData).map(date => ({ date, answers: habitsData[date] }));
+            } else if (moduleKey === 'planner_compras') {
+                // Passa pela migração, para exportar sempre no formato novo da Lista de Compras
+                const { produtos, categorias } = await carregarCompras(StorageService);
+                items = produtos.map(p => ({ ...p, categoria: categorias.find(c => c.id === p.categoryId)?.name || '' }));
             } else {
                 items = await StorageService.get(moduleKey) || [];
             }
@@ -1916,9 +2138,11 @@ document.addEventListener('DOMContentLoaded', async () => {
                     csvContent += row.join(",") + "\n";
                 });
             } else if (moduleKey === 'planner_compras') {
-                csvContent += "ID,Categoria,Item,Detalhes\n";
+                csvContent += "ID,Categoria,Item,Descricao,PrecoEstimado,Comprado,Fornecedores\n";
+                const q = (v) => `"${String(v ?? '').replace(/"/g, '""')}"`;
                 items.forEach(item => {
-                    const row = [item.id || "", `"${(item.categoria || "").replace(/"/g, '""')}"`, `"${(item.item || "").replace(/"/g, '""')}"`, `"${(item.detalhes || "").replace(/"/g, '""')}"`];
+                    const fornecedores = (item.suppliers || []).map(s => s.price != null ? `${s.name} (${s.price})` : s.name).join('; ');
+                    const row = [item.id || "", q(item.categoria), q(item.name), q(item.description), item.estimatedPrice ?? "", item.purchased ? "sim" : "nao", q(fornecedores)];
                     csvContent += row.join(",") + "\n";
                 });
             } else if (moduleKey === 'planner_journal') {
@@ -2158,6 +2382,8 @@ document.addEventListener('DOMContentLoaded', async () => {
         openViewModal: openViewModal,
         openDailyView: openDailyView,
         openManager: openManager,
+        abrirListaCompras: (opcoes = {}) => listaCompras.abrir(opcoes),
+        abrirPomodoro: () => pomodoro.abrir(),
         switchToPlanosView: (prazo, periodoForcado) => switchToPlanosView(prazo, periodoForcado),
         transferActivity: (id) => {
             const activities = StorageService.get('planner_activities').then(acts => {

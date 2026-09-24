@@ -41,6 +41,276 @@ body {
     }
 }
 
+/* ==========================================
+   MENU LATERAL — hierarquia visual (1º nível x 2º nível)
+   Classes próprias, e não Tailwind, porque o css/tailwind.css é um build
+   estático: classes novas que não estejam nele simplesmente não funcionam.
+========================================== */
+
+/* 1º nível: grupos (Estratégico/Tático/Operacional) e atalhos do rodapé.
+   Botões com borda e cantos arredondados. */
+.nav-group-btn,
+.nav-top-btn {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.5rem 0.75rem;
+    border: 1px solid var(--border-color);
+    border-radius: 0.625rem;
+    background-color: var(--bg-panel);
+    color: var(--text-primary);
+    font-size: 0.8125rem;
+    font-weight: 600;
+    cursor: pointer;
+    list-style: none;
+    transition: background-color 0.15s, border-color 0.15s, color 0.15s;
+}
+.nav-group-btn {
+    justify-content: space-between;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    font-size: 0.75rem;
+}
+.nav-group-btn::-webkit-details-marker { display: none; }
+.nav-group-btn:hover,
+.nav-top-btn:hover {
+    border-color: color-mix(in srgb, var(--primary-color) 40%, var(--border-color));
+    background-color: color-mix(in srgb, var(--primary-color) 6%, var(--bg-panel));
+}
+details[open] > .nav-group-btn {
+    border-color: color-mix(in srgb, var(--primary-color) 45%, var(--border-color));
+    background-color: color-mix(in srgb, var(--primary-color) 10%, var(--bg-panel));
+    color: var(--primary-color);
+}
+/* Seta ▶ gira ao abrir o grupo (a classe group-open:rotate-90 não existe no build local) */
+.nav-group-btn > span {
+    font-size: 0.625rem;
+    transition: transform 0.2s;
+}
+details[open] > .nav-group-btn > span {
+    transform: rotate(90deg);
+}
+
+/* 2º nível: itens de cada grupo, recuados, sobre um fundo suavizado
+   e com um fio guia à esquerda ligando-os ao grupo. */
+.nav-sub {
+    display: flex;
+    flex-direction: column;
+    gap: 0.125rem;
+    margin: 0.375rem 0 0.25rem 0.875rem;
+    padding: 0.25rem 0.25rem 0.25rem 0.5rem;
+    border-left: 2px solid color-mix(in srgb, var(--primary-color) 30%, transparent);
+    border-radius: 0 0.5rem 0.5rem 0;
+    background-color: color-mix(in srgb, var(--primary-color) 4%, var(--bg-panel));
+}
+.nav-subitem {
+    display: block;
+    padding: 0.3rem 0.625rem;
+    border-radius: 0.375rem;
+    font-size: 0.8125rem;
+    color: var(--text-secondary);
+    transition: background-color 0.15s, color 0.15s;
+}
+.nav-subitem:hover {
+    background-color: color-mix(in srgb, var(--primary-color) 12%, var(--bg-panel));
+    color: var(--primary-color);
+}
+/* Texto informativo dentro de um grupo sem itens (ex.: "Outros Sistemas") */
+.nav-subitem.nav-vazio,
+.nav-subitem.nav-vazio:hover {
+    font-style: italic;
+    font-size: 0.75rem;
+    background: transparent;
+    color: var(--text-secondary);
+    cursor: default;
+}
+
+/* Item ativo: o app.js sinaliza com 'font-bold' (ex.: "Meu Planner") */
+.nav-subitem.font-bold,
+.nav-top-btn.font-bold {
+    background-color: color-mix(in srgb, var(--primary-color) 14%, var(--bg-panel)) !important;
+    color: var(--primary-color);
+}
+/* Tema escuro: a cor primária (#4f46e5) tem pouco contraste sobre o painel escuro,
+   então os textos "destacados" do menu usam uma versão clareada dela. */
+[data-theme="dark"] details[open] > .nav-group-btn,
+[data-theme="dark"] .nav-subitem:hover,
+[data-theme="dark"] .nav-subitem.font-bold,
+[data-theme="dark"] .nav-top-btn.font-bold {
+    color: color-mix(in srgb, var(--primary-color) 50%, #ffffff);
+}
+[data-theme="dark"] details[open] > .nav-group-btn {
+    background-color: color-mix(in srgb, var(--primary-color) 20%, var(--bg-panel));
+}
+[data-theme="dark"] .nav-subitem.font-bold {
+    background-color: color-mix(in srgb, var(--primary-color) 25%, var(--bg-panel)) !important;
+}
+
+/* ==========================================
+   LISTA DE COMPRAS (js/modules/listaCompras.js)
+   Tradução do App.css de extListaDeCompras para as variáveis de tema do Planner:
+   --surface→--bg-panel, --bg→--bg-color, --border→--border-color, --text→--text-primary,
+   --text-muted→--text-secondary, --primary→--primary-color, --danger→--danger-color.
+   Prefixo lc- para não colidir com classes do Tailwind.
+========================================== */
+#view-compras [hidden], #view-pomodoro [hidden], .lc-oculto { display: none !important; }
+/* Widget "Compras" da página do dia: hover dos links (hover:text-[var(--primary-color)] não existe no build local) */
+#widget-compras-content [data-compra-abrir]:hover { color: var(--primary-color); }
+
+.lc-app { max-width: 880px; width: 100%; margin: 0 auto; padding: 8px 4px 80px; color: var(--text-primary); }
+.lc-header { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; margin-bottom: 20px; }
+.lc-header h2 { font-size: 1.5rem; font-weight: 700; color: var(--primary-color); margin: 0; }
+.lc-header-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+.lc-toolbar { display: flex; gap: 10px; margin-bottom: 10px; }
+.lc-toolbar input, .lc-toolbar select { flex: 1; }
+.lc-resumo { font-size: 0.8125rem; color: var(--text-secondary); margin-bottom: 16px; }
+
+#view-compras input, #view-compras select, #view-compras textarea {
+    font: inherit; font-size: 0.875rem; padding: 8px 10px; border: 1px solid var(--border-color);
+    border-radius: 8px; background: var(--bg-panel); color: var(--text-primary); width: 100%;
+}
+#view-compras input[type="checkbox"] { width: auto; padding: 0; }
+
+.lc-btn {
+    font: inherit; font-size: 0.875rem; border: 1px solid transparent; border-radius: 8px; padding: 7px 14px;
+    background: var(--primary-color); color: #fff; cursor: pointer; white-space: nowrap;
+}
+.lc-btn:hover { background: var(--primary-hover); }
+.lc-btn:disabled { opacity: 0.6; cursor: default; }
+.lc-btn.secondary { background: var(--bg-panel); color: var(--text-primary); border-color: var(--border-color); }
+.lc-btn.secondary:hover:not(:disabled) { background: color-mix(in srgb, var(--primary-color) 6%, var(--bg-panel)); }
+.lc-btn.ghost { background: transparent; color: var(--primary-color); padding: 4px 8px; }
+.lc-btn.ghost:hover:not(:disabled) { background: color-mix(in srgb, var(--primary-color) 10%, transparent); }
+.lc-btn.ghost.danger { color: var(--danger-color); }
+.lc-btn.ghost.danger:hover { background: color-mix(in srgb, var(--danger-color) 12%, transparent); }
+
+.lc-empty { color: var(--text-secondary); text-align: center; padding: 24px 0; }
+.lc-empty.small { padding: 6px 0; font-size: 0.8125rem; }
+.lc-erro { color: var(--danger-color); font-size: 0.8125rem; margin: 0; }
+
+.lc-groups { display: flex; flex-direction: column; gap: 24px; }
+.lc-group h3 { font-size: 0.8125rem; text-transform: uppercase; letter-spacing: 0.04em; color: var(--text-secondary); margin: 0 0 8px; font-weight: 600; }
+.lc-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 8px; }
+.lc-item { background: var(--bg-panel); border: 1px solid var(--border-color); border-radius: 10px; padding: 12px 14px; }
+.lc-item.purchased { opacity: 0.55; }
+.lc-item.purchased .lc-name { text-decoration: line-through; }
+.lc-row { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; }
+.lc-main { display: flex; gap: 10px; flex: 1; min-width: 0; }
+.lc-check { width: 18px !important; height: 18px; margin-top: 3px; accent-color: var(--primary-color); flex-shrink: 0; cursor: pointer; }
+.lc-info { flex: 1; min-width: 0; }
+.lc-title-row { display: flex; justify-content: space-between; gap: 8px; }
+.lc-name { font-weight: 600; }
+.lc-price { color: var(--text-secondary); font-size: 0.875rem; white-space: nowrap; }
+.lc-desc { margin: 4px 0 0; font-size: 0.875rem; color: var(--text-secondary); }
+.lc-chips { list-style: none; margin: 8px 0 0; padding: 0; display: flex; flex-wrap: wrap; gap: 6px; font-size: 0.75rem; }
+.lc-chips li { background: color-mix(in srgb, var(--primary-color) 12%, var(--bg-panel)); color: var(--primary-color); padding: 2px 8px; border-radius: 999px; }
+.lc-chips a { color: inherit; text-decoration: underline; }
+.lc-actions { display: flex; flex-direction: column; gap: 4px; }
+
+/* Modal (estrutura modal-backdrop + modal da referência) */
+.lc-backdrop { position: fixed; inset: 0; background: rgba(15, 18, 25, 0.45); display: flex; align-items: center; justify-content: center; padding: 20px; z-index: 60; }
+.lc-modal { background: var(--bg-panel); color: var(--text-primary); border-radius: 12px; padding: 24px; width: 100%; max-width: 520px; max-height: 90vh; overflow-y: auto; display: flex; flex-direction: column; gap: 12px; box-shadow: 0 20px 40px rgba(0,0,0,.25); }
+.lc-modal h2 { margin: 0 0 4px; font-size: 1.25rem; font-weight: 700; }
+.lc-field { display: flex; flex-direction: column; gap: 4px; font-size: 0.8125rem; color: var(--text-secondary); flex: 1; }
+.lc-field.inline { flex-direction: row; align-items: center; gap: 6px; flex: none; }
+.lc-field.inline select { width: auto; padding: 4px 8px; }
+.lc-form-row { display: flex; gap: 12px; }
+.lc-form-actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 8px; }
+.lc-inline-form { display: flex; gap: 8px; }
+.lc-category-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 6px; max-height: 240px; overflow-y: auto; }
+.lc-category-list li { display: flex; align-items: center; gap: 8px; padding: 6px 0; border-bottom: 1px solid var(--border-color); }
+.lc-category-list li > span { flex: 1; }
+.lc-suppliers { border-top: 1px solid var(--border-color); padding-top: 12px; }
+.lc-suppliers-header { display: flex; justify-content: space-between; align-items: center; font-size: 0.8125rem; color: var(--text-secondary); margin-bottom: 8px; }
+.lc-supplier-row { display: grid; grid-template-columns: 2fr 2fr 1fr auto; gap: 6px; margin-bottom: 6px; align-items: center; }
+
+/* "Cortina" de pesquisa (MarketplaceSearchPanel) */
+.lc-panel { margin-top: 10px; border-top: 1px solid var(--border-color); padding-top: 8px; }
+.lc-panel-toggle { width: 100%; display: flex; align-items: center; gap: 8px; background: transparent; color: var(--text-primary); border: none; padding: 6px 2px; font-size: 0.8125rem; font-weight: 600; cursor: pointer; border-radius: 6px; }
+.lc-panel-toggle:hover { background: color-mix(in srgb, var(--primary-color) 5%, transparent); }
+.lc-panel-title { flex: 1; text-align: left; }
+.lc-panel-count { font-weight: 400; color: var(--text-secondary); }
+.lc-panel-loading { color: var(--text-secondary); cursor: default; }
+.lc-spinner { width: 14px; height: 14px; flex-shrink: 0; border: 2px solid var(--border-color); border-top-color: var(--primary-color); border-radius: 50%; animation: lc-spin 0.8s linear infinite; }
+@keyframes lc-spin { to { transform: rotate(360deg); } }
+.lc-chevron { transition: transform 0.15s ease; color: var(--text-secondary); }
+.lc-chevron.open { transform: rotate(180deg); }
+.lc-panel-body { background: var(--bg-color); border: 1px solid var(--border-color); border-radius: 10px; padding: 12px; margin-top: 6px; }
+.lc-disclaimer { margin: 0 0 10px; font-size: 0.75rem; color: var(--text-secondary); background: color-mix(in srgb, var(--primary-color) 10%, var(--bg-panel)); border-radius: 6px; padding: 6px 10px; }
+.lc-filters { display: flex; flex-wrap: wrap; align-items: flex-end; gap: 16px; margin-bottom: 10px; }
+.lc-filters .lc-field { max-width: 220px; }
+.lc-pills { display: flex; flex-wrap: wrap; gap: 8px; }
+.lc-pill { display: flex; align-items: center; gap: 6px; background: var(--bg-panel); border: 1px solid var(--border-color); border-radius: 999px; padding: 5px 12px; font-size: 0.75rem; color: var(--text-primary); cursor: pointer; user-select: none; }
+.lc-pill.on { background: color-mix(in srgb, var(--primary-color) 12%, var(--bg-panel)); border-color: var(--primary-color); color: var(--primary-color); }
+.lc-results { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 8px; }
+.lc-result { display: flex; align-items: center; gap: 10px; background: var(--bg-panel); border: 1px solid var(--border-color); border-radius: 8px; padding: 8px 10px; }
+.lc-thumb { flex-shrink: 0; width: 44px; height: 44px; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-weight: 700; color: #1f2430; }
+.lc-result-info { flex: 1; min-width: 0; }
+.lc-result-top { display: flex; justify-content: space-between; gap: 8px; font-size: 0.75rem; }
+.lc-market { font-weight: 600; color: var(--primary-color); }
+.lc-rating { color: var(--text-secondary); white-space: nowrap; }
+.lc-result-title { margin: 2px 0 0; font-size: 0.8125rem; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.lc-result-desc { margin: 2px 0 0; font-size: 0.75rem; color: var(--text-secondary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.lc-badges { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 6px; }
+.lc-badge { font-size: 0.6875rem; background: var(--bg-color); color: var(--text-secondary); padding: 2px 8px; border-radius: 999px; white-space: nowrap; border: 1px solid var(--border-color); }
+.lc-badge.cashback { background: color-mix(in srgb, var(--success-color) 15%, var(--bg-panel)); color: var(--success-color); border-color: transparent; }
+.lc-result-price { flex-shrink: 0; display: flex; flex-direction: column; align-items: flex-end; gap: 4px; font-weight: 600; white-space: nowrap; }
+.lc-pagination { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px; margin-top: 10px; padding-top: 10px; border-top: 1px solid var(--border-color); font-size: 0.75rem; }
+.lc-page-controls { display: flex; align-items: center; gap: 8px; color: var(--text-secondary); }
+
+@media (max-width: 640px) {
+    .lc-form-row, .lc-toolbar { flex-direction: column; }
+    .lc-supplier-row { grid-template-columns: 1fr 1fr; }
+}
+
+/* Tema escuro: textos na cor primária usam um tom clareado (mesmo ajuste do menu lateral, §3.22) */
+[data-theme="dark"] .lc-header h2,
+[data-theme="dark"] .pm-app h2,
+[data-theme="dark"] .lc-btn.ghost:not(.danger),
+[data-theme="dark"] .lc-chips li,
+[data-theme="dark"] .lc-market,
+[data-theme="dark"] .lc-pill.on {
+    color: color-mix(in srgb, var(--primary-color) 50%, #ffffff);
+}
+[data-theme="dark"] .lc-chips li { background: color-mix(in srgb, var(--primary-color) 25%, var(--bg-panel)); }
+
+/* ==========================================
+   POMODORO (js/modules/pomodoro.js) — prefixo pm-
+   A cor do período atual (foco/pausa) vem de --pm-cor, trocada por data-modo.
+========================================== */
+.pm-app { --pm-cor: #e0533d; max-width: 520px; width: 100%; margin: 0 auto; padding: 8px 4px 60px; display: flex; flex-direction: column; align-items: center; gap: 20px; color: var(--text-primary); }
+.pm-app[data-modo="pausaCurta"] { --pm-cor: #0f9d76; }
+.pm-app[data-modo="pausaLonga"] { --pm-cor: #2f7fd6; }
+.pm-app h2 { font-size: 1.5rem; font-weight: 700; color: var(--primary-color); margin: 0; align-self: flex-start; }
+.pm-modos { display: flex; gap: 6px; background: var(--bg-panel); border: 1px solid var(--border-color); border-radius: 999px; padding: 4px; flex-wrap: wrap; justify-content: center; }
+.pm-modo { border: none; background: transparent; color: var(--text-secondary); padding: 6px 14px; border-radius: 999px; font-size: 0.875rem; font-weight: 600; cursor: pointer; }
+.pm-modo:hover { color: var(--text-primary); }
+.pm-modo.ativo { background: var(--pm-cor); color: #fff; }
+.pm-relogio { width: 100%; background: var(--bg-panel); border: 1px solid var(--border-color); border-top: 4px solid var(--pm-cor); border-radius: 16px; padding: 28px 24px 20px; text-align: center; box-shadow: 0 4px 14px rgba(0,0,0,.05); }
+.pm-tempo { font-size: 4.5rem; font-weight: 700; line-height: 1; letter-spacing: 0.02em; font-variant-numeric: tabular-nums; color: var(--pm-cor); }
+.pm-barra { height: 6px; background: var(--bg-color); border-radius: 999px; overflow: hidden; margin: 20px 0 10px; }
+.pm-progresso { height: 100%; width: 0; background: var(--pm-cor); transition: width 0.25s linear; }
+.pm-legenda { margin: 0; font-size: 0.875rem; color: var(--text-secondary); }
+.pm-controles { display: flex; gap: 10px; flex-wrap: wrap; justify-content: center; }
+.pm-btn { font: inherit; font-size: 0.875rem; font-weight: 600; border: 1px solid var(--border-color); background: var(--bg-panel); color: var(--text-primary); border-radius: 10px; padding: 9px 18px; cursor: pointer; }
+.pm-btn:hover:not(:disabled) { border-color: var(--pm-cor); }
+.pm-btn:disabled { opacity: 0.6; cursor: default; }
+.pm-btn.primario { background: var(--pm-cor); border-color: var(--pm-cor); color: #fff; min-width: 130px; }
+.pm-btn.primario:hover { filter: brightness(1.08); }
+.pm-ciclos { display: flex; align-items: center; gap: 12px; font-size: 0.875rem; color: var(--text-secondary); flex-wrap: wrap; justify-content: center; }
+.pm-pontos { display: flex; gap: 6px; }
+.pm-ponto { width: 12px; height: 12px; border-radius: 50%; border: 2px solid var(--pm-cor); }
+.pm-ponto.cheio { background: var(--pm-cor); }
+.pm-link { background: none; border: none; color: var(--text-secondary); text-decoration: underline; font-size: 0.75rem; cursor: pointer; }
+.pm-config { width: 100%; background: var(--bg-panel); border: 1px solid var(--border-color); border-radius: 12px; padding: 10px 14px; }
+.pm-config summary { cursor: pointer; font-size: 0.875rem; font-weight: 600; color: var(--text-secondary); }
+.pm-config-form { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 12px; }
+.pm-config-form label { display: flex; flex-direction: column; gap: 4px; font-size: 0.75rem; color: var(--text-secondary); }
+.pm-config-form input { font: inherit; font-size: 0.875rem; padding: 7px 9px; border: 1px solid var(--border-color); border-radius: 8px; background: var(--bg-color); color: var(--text-primary); }
+.pm-config-form .pm-btn { grid-column: 1 / -1; justify-self: end; }
+.pm-aviso { width: 100%; display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap; font-size: 0.8125rem; color: var(--text-secondary); background: color-mix(in srgb, var(--primary-color) 8%, var(--bg-panel)); border: 1px solid var(--border-color); border-radius: 10px; padding: 10px 12px; }
+.pm-aviso .pm-btn { padding: 6px 12px; font-size: 0.8125rem; }
+
 /* Utilitários de Cor de Fundo de Emergência */
 .bg-\[var\(--bg-panel\)\] { background-color: var(--bg-panel) !important; }
 .bg-\[var\(--bg-color\)\] { background-color: var(--bg-color) !important; }

@@ -49,47 +49,71 @@
                 <div class="flex-shrink-0 space-y-2">
                     <!-- Estratégico -->
                     <details class="group">
-                        <summary class="text-xs font-semibold text-[var(--text-secondary)] uppercase mb-2 px-2 cursor-pointer list-none flex items-center justify-between">
+                        <summary class="nav-group-btn">
                             Estratégico
                             <span class="transform group-open:rotate-90 transition-transform">▶</span>
                         </summary>
-                        <div class="space-y-1">
-                            <a href="#" id="menu-missao" class="block py-1 px-3 rounded hover:bg-[var(--border-color)] transition text-sm">Missão</a>
-                            <a href="#" id="menu-visao" class="block py-1 px-3 rounded hover:bg-[var(--border-color)] transition text-sm">Visão</a>
-                            <a href="#" id="menu-objetivos" class="block py-1 px-3 rounded hover:bg-[var(--border-color)] transition text-sm">Objetivos</a>
+                        <div class="nav-sub">
+                            <a href="#" id="menu-missao" class="nav-subitem">Missão</a>
+                            <a href="#" id="menu-visao" class="nav-subitem">Visão</a>
+                            <a href="#" id="menu-objetivos" class="nav-subitem">Objetivos</a>
+                            <a href="#" id="menu-valores" class="nav-subitem">Valores</a>
                         </div>
                     </details>
                     
                     <!-- Tático -->
                     <details class="group">
-                        <summary class="text-xs font-semibold text-[var(--text-secondary)] uppercase mb-2 px-2 cursor-pointer list-none flex items-center justify-between">
+                        <summary class="nav-group-btn">
                             Tático
                             <span class="transform group-open:rotate-90 transition-transform">▶</span>
                         </summary>
-                        <div class="space-y-1">
-                            <a href="#" id="menu-plano-anual" class="block py-1 px-3 rounded hover:bg-[var(--border-color)] transition text-sm">Plano Anual</a>
-                            <a href="#" id="menu-plano-mensal" class="block py-1 px-3 rounded hover:bg-[var(--border-color)] transition text-sm">Plano Mensal</a>
-                            <a href="#" id="menu-plano-semanal" class="block py-1 px-3 rounded hover:bg-[var(--border-color)] transition text-sm">Plano Semanal</a>
+                        <div class="nav-sub">
+                            <a href="#" id="menu-plano-anual" class="nav-subitem">Plano Anual</a>
+                            <a href="#" id="menu-plano-mensal" class="nav-subitem">Plano Mensal</a>
                         </div>
                     </details>
 
                     <!-- Operacional -->
                     <details class="group" open>
-                        <summary class="text-xs font-semibold text-[var(--text-secondary)] uppercase mb-2 px-2 cursor-pointer list-none flex items-center justify-between">
+                        <summary class="nav-group-btn">
                             Operacional
                             <span class="transform group-open:rotate-90 transition-transform">▶</span>
                         </summary>
-                        <div class="space-y-1">
-                            <a href="#" id="menu-dashboard" class="block py-1 px-3 rounded hover:bg-[var(--border-color)] transition text-sm">Meu Planner</a>
-                            <a href="#" id="menu-atividades" class="block py-1 px-3 rounded hover:bg-[var(--border-color)] transition text-sm">Atividade</a>
-                            <a href="#" class="block py-1 px-3 rounded hover:bg-[var(--border-color)] transition text-sm">Alarmes</a>
+                        <div class="nav-sub">
+                            <a href="#" id="menu-plano-semanal" class="nav-subitem">Plano Semanal</a>
+                            <a href="#" id="menu-dashboard" class="nav-subitem">Meu Planner</a>
+                            <a href="#" id="menu-atividades" class="nav-subitem">Atividade</a>
+                        </div>
+                    </details>
+
+                    <!-- Recursos -->
+                    <details class="group">
+                        <summary class="nav-group-btn">
+                            Recursos
+                            <span class="transform group-open:rotate-90 transition-transform">▶</span>
+                        </summary>
+                        <div class="nav-sub">
+                            <a href="#" class="nav-subitem" onclick="window.appRouter.openManager('alarme')">⏰ Alarmes</a>
+                            <a href="#" id="menu-pomodoro" class="nav-subitem">🍅 Pomodoro</a>
+                            <a href="#" id="menu-compras" class="nav-subitem">🛒 Lista de Compras</a>
+                        </div>
+                    </details>
+
+                    <!-- Outros Sistemas (links para os sistemas irmãos; vazio por enquanto) -->
+                    <details class="group">
+                        <summary class="nav-group-btn">
+                            Outros Sistemas
+                            <span class="transform group-open:rotate-90 transition-transform">▶</span>
+                        </summary>
+                        <div class="nav-sub">
+                            <span class="nav-subitem nav-vazio">Nenhum sistema vinculado ainda.</span>
                         </div>
                     </details>
                 </div>
 
-                <div class="mt-auto pt-4 border-t border-[var(--border-color)] flex-shrink-0 space-y-1">
-                    <a href="#" class="block py-1.5 px-3 rounded hover:bg-[var(--border-color)] transition text-sm text-[var(--text-primary)]" onclick="window.appRouter.openManager('contexto')">🎭 Contextos / Papeis</a>
-                    <a href="#" id="menu-settings" class="block py-1.5 px-3 rounded hover:bg-[var(--border-color)] transition text-sm text-[var(--text-primary)]">⚙️ Configurações</a>
+                <div class="mt-auto pt-4 border-t border-[var(--border-color)] flex-shrink-0 space-y-2">
+                    <a href="#" class="nav-top-btn" onclick="window.appRouter.openManager('contexto')">🎭 Contextos / Papeis</a>
+                    <a href="#" id="menu-settings" class="nav-top-btn">⚙️ Configurações</a>
                 </div>
             </nav>
         </aside>
@@ -129,10 +153,6 @@
                             <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
                         </svg>
                     </button>
-                    <button class="text-sm border border-[var(--border-color)] text-[var(--text-secondary)] px-3 py-1.5 rounded hover:bg-[var(--border-color)] transition shadow-sm items-center space-x-1 hidden md:flex" title="Gerar Relatório A4 da Semana">
-                        <span>🖨️</span> <span>Relatório</span>
-                    </button>
-                    <button id="btn-new-activity" class="bg-[var(--primary-color)] text-white px-3 py-1.5 rounded hover:bg-[var(--primary-hover)] transition shadow-sm text-sm font-bold whitespace-nowrap">+ Novo</button>
                 </div>
             </div>
             </header>
@@ -241,6 +261,10 @@
                     </div>
 
 </div>
+                <!-- Fecha #view-dashboard (146) — fechamento estava faltando aqui, o que fazia
+                     view-settings/view-reports/etc. ficarem aninhadas dentro do dashboard e
+                     nunca aparecerem visualmente mesmo com o toggle de 'hidden' correto. -->
+                </div>
 
                 <!-- Área de Configurações -->
                 <div id="view-settings" class="flex-1 overflow-auto p-6 max-w-7xl mx-auto w-full hidden">
@@ -263,6 +287,14 @@
                         <div id="global-day-modal" class="hidden"></div>
                         <div id="day-modal-title" class="hidden"></div>
 
+                        <div>
+                            <h3 class="font-bold text-lg mb-2">Notificações</h3>
+                            <div class="space-y-2">
+                                <button id="btn-notifications-permission" class="px-4 py-2 bg-[var(--border-color)] rounded">🔔 Ativar notificações</button>
+                                <p class="text-xs text-[var(--text-secondary)] mt-1">Necessário para que os Alarmes (menu Operacional) mostrem um aviso do sistema no horário programado. Precisa de uma aba do Total Planner aberta no momento do alarme.</p>
+                            </div>
+                        </div>
+
 <h3 class="font-bold text-lg mb-2">Painéis Ativos</h3>
                             <div class="space-y-2">
                                 <label><input type="checkbox" id="setting-widget-habitos"> Hábitos</label><br>
@@ -275,7 +307,6 @@
                         </div>
                     </div>
                 </div>
-            </div>
 
                 <!-- Tela de Estatísticas -->
                 <div id="view-reports" class="flex-1 overflow-auto p-6 max-w-7xl mx-auto w-full hidden flex-col h-full">
@@ -510,6 +541,79 @@
                     </div>
                 </div>
 
+                <!-- Recursos: Lista de Compras e Pomodoro (conteúdo desenhado por js/modules/listaCompras.js e pomodoro.js) -->
+                <div id="view-compras" class="flex-1 overflow-auto p-6 w-full hidden flex-col h-full"></div>
+                <div id="view-pomodoro" class="flex-1 overflow-auto p-6 w-full hidden flex-col h-full"></div>
+
+                <!-- View - Educacional Valores -->
+                <div id="view-valores-educacional" class="flex-1 overflow-auto p-6 max-w-7xl mx-auto w-full hidden flex-col h-full">
+                    <div class="mb-8">
+                        <button id="btn-voltar-valores" class="px-4 py-2 bg-gray-500 text-white rounded-lg font-semibold hover:bg-gray-600 transition-all flex items-center gap-2">
+                            ← Voltar para Valores
+                        </button>
+                    </div>
+
+                    <div class="space-y-8">
+                        <section>
+                            <h2 class="text-3xl font-bold text-[var(--primary-color)] mb-4">📚 O que são Valores?</h2>
+                            <p class="text-lg text-[var(--text-primary)] leading-relaxed">Valores são os <strong>princípios inegociáveis</strong> que orientam suas escolhas e o seu comportamento. Eles respondem à pergunta essencial: <em>"O que é importante para mim, mesmo quando ninguém está olhando?"</em></p>
+                        </section>
+
+                        <section class="bg-[var(--bg-panel)] p-6 rounded-lg border border-[var(--border-color)]">
+                            <h3 class="text-2xl font-bold text-[var(--primary-color)] mb-4">✨ Características de Bons Valores</h3>
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div class="bg-blue-50 dark:bg-blue-950/20 p-4 rounded-lg border-l-4 border-blue-500">
+                                    <h4 class="font-bold text-[var(--primary-color)] mb-1">Autênticos</h4>
+                                    <p class="text-sm text-[var(--text-secondary)]">Refletem quem você é, não o que "fica bonito"</p>
+                                </div>
+                                <div class="bg-blue-50 dark:bg-blue-950/20 p-4 rounded-lg border-l-4 border-blue-500">
+                                    <h4 class="font-bold text-[var(--primary-color)] mb-1">Poucos</h4>
+                                    <p class="text-sm text-[var(--text-secondary)]">De 3 a 7 valores são mais fáceis de lembrar e viver</p>
+                                </div>
+                                <div class="bg-blue-50 dark:bg-blue-950/20 p-4 rounded-lg border-l-4 border-blue-500">
+                                    <h4 class="font-bold text-[var(--primary-color)] mb-1">Praticáveis</h4>
+                                    <p class="text-sm text-[var(--text-secondary)]">Aparecem em decisões concretas do dia a dia</p>
+                                </div>
+                                <div class="bg-blue-50 dark:bg-blue-950/20 p-4 rounded-lg border-l-4 border-blue-500">
+                                    <h4 class="font-bold text-[var(--primary-color)] mb-1">Estáveis</h4>
+                                    <p class="text-sm text-[var(--text-secondary)]">Mudam pouco ao longo do tempo, ao contrário de metas</p>
+                                </div>
+                            </div>
+                        </section>
+
+                        <section class="bg-[var(--bg-panel)] p-6 rounded-lg border border-[var(--border-color)]">
+                            <h3 class="text-2xl font-bold text-[var(--primary-color)] mb-6">🔄 Diferenças Importantes</h3>
+                            <div class="space-y-4">
+                                <div class="border-l-4 border-green-500 pl-4">
+                                    <h4 class="font-bold text-[var(--primary-color)] mb-2">Valores vs Missão</h4>
+                                    <p class="text-[var(--text-primary)]">A <em>Missão</em> diz <strong>por que você faz</strong>; os <em>Valores</em> dizem <strong>como você faz</strong>: os limites e prioridades que você respeita no caminho</p>
+                                </div>
+                                <div class="border-l-4 border-green-500 pl-4">
+                                    <h4 class="font-bold text-[var(--primary-color)] mb-2">Valores vs Visão</h4>
+                                    <p class="text-[var(--text-primary)]">A <em>Visão</em> é o destino (<strong>aonde quero chegar</strong>); os <em>Valores</em> são o que você não abre mão para chegar lá</p>
+                                </div>
+                                <div class="border-l-4 border-green-500 pl-4">
+                                    <h4 class="font-bold text-[var(--primary-color)] mb-2">Valores vs Objetivos</h4>
+                                    <p class="text-[var(--text-primary)]">Os <em>Objetivos</em> são alcançados e encerrados; os <em>Valores</em> são vividos continuamente e servem de filtro para escolher quais objetivos valem a pena</p>
+                                </div>
+                            </div>
+                        </section>
+
+                        <section class="bg-gradient-to-br from-yellow-50 to-amber-50 dark:from-yellow-950/30 dark:to-amber-950/30 p-6 rounded-lg border-2 border-yellow-400 dark:border-yellow-700">
+                            <h4 class="text-xl font-bold text-yellow-900 dark:text-yellow-300 mb-3 flex items-center gap-2">
+                                💡 Dica Prática
+                            </h4>
+                            <p class="text-[var(--text-primary)] leading-relaxed">Para cada valor, escreva uma frase curta que mostre como ele aparece na prática (ex.: <em>"Família — janto em casa pelo menos 4 noites por semana"</em>). Assim fica fácil perceber quando uma decisão entra em conflito com ele.</p>
+                        </section>
+                    </div>
+
+                    <div class="mt-12 flex justify-start">
+                        <button id="btn-voltar-valores-bottom" class="px-6 py-3 bg-gray-500 text-white rounded-lg font-semibold hover:bg-gray-600 transition-all flex items-center gap-2">
+                            ← Voltar para Valores
+                        </button>
+                    </div>
+                </div>
+
                 <div id="view-export" class="flex-1 overflow-auto p-6 max-w-7xl mx-auto w-full hidden flex-col h-full">
                 </div>
 
@@ -674,13 +778,27 @@
                         <select id="alarme-recurrence" class="w-full border border-[var(--border-color)] rounded p-2 bg-[var(--bg-color)]">
                             <option value="diario">Diário</option>
                             <option value="unico">Único</option>
+                            <option value="semanal">Semanal</option>
                         </select>
                     </div>
                     <div id="alarme-date-container">
                         <label class="block text-sm font-semibold mb-1">Data</label>
                         <input type="date" id="alarme-date" class="w-full border border-[var(--border-color)] rounded p-2 bg-[var(--bg-color)]">
+                        <span class="form-error hidden text-red-500 text-xs mt-1 block" id="alarme-date-error"></span>
                     </div>
-                    <div id="alarme-weekdays-container" class="hidden"></div>
+                    <div id="alarme-weekdays-container" class="hidden">
+                        <label class="block text-sm font-semibold mb-1">Dias da Semana</label>
+                        <div class="flex flex-wrap gap-2">
+                            <label class="flex items-center space-x-1 text-sm"><input type="checkbox" class="alarme-weekday-checkbox" value="0"><span>Dom</span></label>
+                            <label class="flex items-center space-x-1 text-sm"><input type="checkbox" class="alarme-weekday-checkbox" value="1"><span>Seg</span></label>
+                            <label class="flex items-center space-x-1 text-sm"><input type="checkbox" class="alarme-weekday-checkbox" value="2"><span>Ter</span></label>
+                            <label class="flex items-center space-x-1 text-sm"><input type="checkbox" class="alarme-weekday-checkbox" value="3"><span>Qua</span></label>
+                            <label class="flex items-center space-x-1 text-sm"><input type="checkbox" class="alarme-weekday-checkbox" value="4"><span>Qui</span></label>
+                            <label class="flex items-center space-x-1 text-sm"><input type="checkbox" class="alarme-weekday-checkbox" value="5"><span>Sex</span></label>
+                            <label class="flex items-center space-x-1 text-sm"><input type="checkbox" class="alarme-weekday-checkbox" value="6"><span>Sáb</span></label>
+                        </div>
+                        <span class="form-error hidden text-red-500 text-xs mt-1 block" id="alarme-weekdays-error"></span>
+                    </div>
                     <div class="pt-4 flex justify-end space-x-2">
                         <button type="button" class="btn-cancel-modal px-4 py-2 border rounded">Cancelar</button>
                         <button type="submit" class="px-4 py-2 text-white bg-[var(--primary-color)] rounded">Salvar</button>
@@ -760,6 +878,18 @@
                     <div class="pt-4 flex justify-end space-x-2">
                         <button type="button" class="btn-cancel-modal px-4 py-2 border rounded">Cancelar</button>
                         <button type="submit" class="px-4 py-2 text-white bg-[var(--primary-color)] rounded">Atualizar Visão</button>
+                    </div>
+                </form>
+
+                <form id="form-valores" class="space-y-4 hidden">
+                    <div>
+                        <label class="block text-sm font-semibold mb-1">Nova Versão dos Valores</label>
+                        <textarea id="valores-content" class="w-full border border-[var(--border-color)] rounded p-2 bg-[var(--bg-color)] h-32 resize-none" placeholder="Liste seus valores (um por linha, se preferir)..." required></textarea>
+                        <span class="form-error hidden text-red-500 text-xs mt-1 block" id="valores-content-error"></span>
+                    </div>
+                    <div class="pt-4 flex justify-end space-x-2">
+                        <button type="button" class="btn-cancel-modal px-4 py-2 border rounded">Cancelar</button>
+                        <button type="submit" class="px-4 py-2 text-white bg-[var(--primary-color)] rounded">Atualizar Valores</button>
                     </div>
                 </form>
 
@@ -848,6 +978,14 @@
             </div>
             <div class="mb-4">
                 <button id="btn-manager-add" class="bg-[var(--primary-color)] text-white px-3 py-1.5 rounded">+ Novo Item</button>
+            </div>
+            <!-- Só aparece no gerenciador de Alarmes (openManager('alarme')) -->
+            <div id="manager-notificacoes" class="hidden mb-4 p-3 rounded border border-[var(--border-color)] bg-[var(--bg-color)]">
+                <div class="flex items-center gap-2 flex-wrap">
+                    <button id="btn-alarme-permissao" class="px-3 py-1.5 rounded border border-[var(--border-color)] text-sm">🔔 Ativar notificações</button>
+                    <button id="btn-alarme-testar" class="px-3 py-1.5 rounded border border-[var(--border-color)] text-sm">🔊 Testar aviso</button>
+                </div>
+                <p id="manager-notificacoes-ajuda" class="text-xs text-[var(--text-secondary)] mt-2"></p>
             </div>
             <div id="manager-modal-list" class="flex-1 overflow-auto space-y-2"></div>
         </div>
