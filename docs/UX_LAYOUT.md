@@ -13,6 +13,7 @@ Este documento registra discussões, análises e decisões sobre experiência do
 | 2026-09-23 | Header enxuto: sem "Relatório" e "+ Novo", só o tema à direita | 🟢 Decidido e implementado (ponto em aberto: tema no mobile) |
 | 2026-09-23 | Menu lateral: hierarquia visual entre níveis + grupo "Recursos" | 🟢 Decidido e implementado |
 | 2026-09-24 | Recursos ganha Pomodoro e Lista de Compras; novo grupo "Outros Sistemas" | 🟢 Implementado (conteúdo de Outros Sistemas em aberto) |
+| 2026-09-24 | Boxes Citação/Devocional: botão + modal, modos na engrenagem, e o Omitir como faixa mínima | 🟢 Decidido e implementado |
 
 ---
 
@@ -152,3 +153,38 @@ Quais sistemas entram em "Outros Sistemas". Há vários irmãos na pasta de proj
 
 ### Status
 🟢 **Implementado.** O conteúdo de "Outros Sistemas" continua em aberto.
+
+---
+
+## 2026-09-24 — Boxes Citação/Devocional: botão + modal, modos na engrenagem, e o Omitir como faixa mínima
+
+### Pedido do usuário
+Em duas etapas. Primeiro: "transformar o espaço 'Devocional' e 'Motivacional' em botões que abrirão um modal com a referida citação", com a possibilidade de fixar uma citação pelo ID. Depois, ao refinar a lógica: cada box precisa de três opções — **aleatório** (uma mensagem diferente a cada dia), **fixada** (o usuário escolhe o ID, e a mensagem permanece a partir daquela data, com opção de trocar) e **omitir** (esconder o box).
+
+### Decisões (v1.47), confirmadas com o usuário antes da implementação
+- O texto sai do box: o box mostra só um botão ("✨ Ver Citação do Dia" / "🙏 Ver Devocional do Dia") e um selo discreto com o modo ("🎲 Aleatório" / "📌 Fixada"); o texto completo abre num modal.
+- O modo é versionado **por data**: trocar hoje vale de hoje em diante, e dias anteriores continuam mostrando o que valia na época.
+- A troca vale **a partir de hoje (data real)**, e não do dia aberto na tela.
+- O controle fica **no próprio box**, numa engrenagem ⚙️, e não em Configurações. As caixas antigas "Motivacional"/"Devocional" de Configurações saíram (o Omitir as substitui).
+- Para o usuário descobrir o ID de uma mensagem, a lista em "Gerenciar" mostra o ID de cada item com um botão "📋 copiar".
+
+### Problema encontrado depois (v1.51)
+O Omitir escondia o box inteiro, e a engrenagem ia junto. A partir da data do marco, o box sumia junto com o único controle capaz de trazê-lo de volta. O aviso em Configurações ("use a engrenagem no próprio box") apontava para um box que já não aparecia. O único caminho era abrir um dia anterior ao marco — correto pelo modelo, mas ninguém descobre sozinho.
+
+### Opções consideradas
+- **(a) Faixa mínima:** em Omitir, o box encolhe para uma faixa com o título, a engrenagem e o aviso "Oculto desde DD/MM".
+- **(b) "Mostrar de novo" em Configurações:** o box continua sumindo, e Configurações ganha um controle para reexibir os boxes omitidos.
+
+A (a) mantém o controle onde o usuário já aprendeu que ele fica e diz na própria tela o que aconteceu e desde quando. A (b) esconde de verdade, mas separa o "desfazer" do lugar do "fazer" e obriga o usuário a lembrar que existe um segundo caminho.
+
+### Decisão (v1.52)
+**Opção (a)**, escolhida pelo usuário. A faixa fica esmaecida (opacidade 0,7, volta a 1 ao passar o mouse) e com menos altura, para ocupar pouco espaço, mas continua clicável.
+
+### Regra que fica
+Um controle que desfaz um estado não pode ficar dentro do elemento que esse estado esconde.
+
+### Registro técnico
+`MANUAL_TECNICO.md` §3.26; `docs/historico/citacao_devocional_modo_aleatorio_fixada_omitir_20260924_0400.md` (v1.47) e `docs/historico/citacao_omitir_faixa_minima_20260924_0645.md` (v1.52).
+
+### Status
+🟢 **Decidido e implementado.**

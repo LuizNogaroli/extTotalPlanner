@@ -55,11 +55,17 @@ export async function renderCitacaoWidget(tipo, dateStr) {
     const cfg = await StorageService.get(CONFIG_KEY) || {};
     const marker = resolveCitacaoMarker(cfg[tipo], dateStr);
 
+    container.style.display = 'flex';
+
+    // Omitir: o box não some — vira uma faixa mínima (título + engrenagem + aviso),
+    // porque a engrenagem é o único caminho para desfazer (pendencias.md 1.9).
+    container.classList.toggle('citacao-omitida', marker.modo === 'omitir');
     if (marker.modo === 'omitir') {
-        container.style.display = 'none';
+        const desde = marker.dataInicio.split('-').reverse().slice(0, 2).join('/');
+        contentEl.innerHTML = `<span class="citacao-omitida-aviso">Oculto desde ${desde}</span>`;
+        itemExibido[tipo] = null;
         return;
     }
-    container.style.display = 'flex';
 
     const list = tipo === 'motivacional'
         ? await window.ContentService.getMotivacionalList()

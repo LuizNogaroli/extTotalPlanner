@@ -26,7 +26,7 @@ Sempre que possível, o item diz onde está o problema e sugere uma correção. 
 - [ ] **1.6. As telas "Relatórios" e "Exportar Dados" são inalcançáveis** 📖. `#view-reports` e `#view-export` existem no HTML, e `app.js` tem `switchToReportsView`/`switchToExportView` e todo o código de exportação CSV. Mas não existe nenhum item de menu para essas telas (`#menu-reports`/`#menu-export` não estão no HTML), nem nenhum botão `.btn-export-csv-module`. Decidir: religar no menu (Recursos?) ou remover.
 - [ ] **1.7. O breadcrumb do cabeçalho não alterna entre desktop e celular ao redimensionar** ✔. A escolha é feita só quando ele é desenhado. Ver `docs/header.md` §6 nº 5.
 - [x] ~~1.8. "+ Novo Item" de Fatos Históricos (`historico`) nunca salva~~ **Corrigido na v1.48 (§3.27).** `fields`/`requires` de `crud/formMappers.js` reescritos para `['id','createdAt','date','fato']` / `['date','fato']`, alinhados aos IDs reais (`historico-date`/`historico-fato`); `validateHistorico` corrigida; link "📜 Histórico" adicionado ao menu Recursos. Ver `docs/historico/fix_historico_formmappers_20260924_1200.md`.
-- [ ] **1.9. Depois de "Omitir" um box de Citação/Devocional, não há como desfazer pela tela** ✔. O modo Omitir (v1.47, §3.26) esconde o `#widget-container-<tipo>` inteiro, e a engrenagem ⚙️ — único lugar onde o modo é configurado — fica dentro dele. A partir da data do marco, o box some junto com o controle que o traria de volta. Hoje o único caminho é abrir um dia **anterior** ao marco (onde o box ainda aparece) e usar a engrenagem de lá, que também vale "a partir de hoje" — funciona, mas ninguém descobre sozinho. O aviso em Configurações ("use a engrenagem no próprio box") piora a confusão, porque o box não está mais lá. **Verificado no navegador** (v1.51): com Motivacional em Omitir no dia 24/09, o box e a engrenagem não aparecem nesse dia. **Correção sugerida (decisão sua):** (a) em Omitir, trocar o box por uma faixa mínima, só com o título e a engrenagem, em vez de escondê-lo; ou (b) pôr em Configurações um controle "Mostrar de novo" para os boxes omitidos. Achado ao repetir os testes da §3.26 na Fase 2 da refatoração; não corrigido lá porque a Fase 2 só pode mover código, sem mudar comportamento.
+- [x] ~~1.9. Depois de "Omitir" um box de Citação/Devocional, não há como desfazer pela tela~~ **Corrigido na v1.52 (§3.26), opção (a).** Em Omitir, o box não some mais: vira uma faixa mínima com o título, a engrenagem e o aviso "Oculto desde DD/MM". Ver `docs/historico/citacao_omitir_faixa_minima_20260924_0645.md`.
 
 ## 2. Problemas visuais e de tema
 
@@ -156,6 +156,7 @@ Itens que constavam como pendentes e foram resolvidos. O detalhe está na seçã
 - [x] No Plano Semanal, clicar num dia do sub-header não abria a Visão Diária (v1.46).
 - [x] Citação/Devocional: boxes viram botão + modal, com modo Aleatório/Fixada/Omitir versionado por data; "+ Novo Item" de Motivacional/Devocional (que nunca salvava) corrigido; gerenciadores religados no menu Recursos (v1.47).
 - [x] "+ Novo Item" de Fatos Históricos não salvava nada (mesmo schema divergente do HTML) e gerenciador inalcançável pelo menu (v1.48).
+- [x] Omitir em Citação/Devocional escondia a engrenagem junto com o box, sem caminho para desfazer (v1.52).
 
 ---
 **Próximos Passos (sugestão de prioridade):**
