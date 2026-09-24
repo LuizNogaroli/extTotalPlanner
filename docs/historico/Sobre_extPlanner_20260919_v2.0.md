@@ -13,6 +13,17 @@ A proposta do **extPlanner** é criar um planner digital que combine o melhor de
 
 O objetivo principal é ajudar o usuário a conectar o **Macro** (sua razão de ser e grandes metas) com o **Micro** (o que precisa ser feito hoje, nesta hora).
 
+---
+
+## 1. Visão Geral e Propósito
+
+### 1.1. O Conceito
+A proposta do **extPlanner** é criar um planner digital que combine o melhor de dois mundos:
+*   **A tangibilidade e o foco do papel:** Menos ruído, foco no essencial e clareza visual.
+*   **O poder e a flexibilidade do digital:** Automações, buscas, versionamento histórico, portabilidade e inteligência de dados.
+
+O objetivo principal é ajudar o usuário a conectar o **Macro** (sua razão de ser e grandes metas) com o **Micro** (o que precisa ser feito hoje, nesta hora).
+
 ### 1.2. A Vida por Contextos (Papeis e Cenários)
 O ser humano atua como um ator desempenhando diferentes **papeis** em diferentes cenários (ex: Trabalho, Marido, Filho, Irmão, Pai, Estudante, etc.). 
 *   **Diretriz:** Nenhuma atividade existe de forma descontextualizada.
@@ -32,14 +43,10 @@ A estrutura do extPlanner é hierárquica, garantindo que nenhuma tarefa diária
     ▲▲▲▲  [NÍVEL 4: OPERACIONAL] Gestão Diária (A Execução/Timeline/Time Blocking)
 ```
 
-> **Pirâmide x menu do app (2026-09-24):** no menu lateral, os grupos seguem a pirâmide (Estratégico, Tático, Operacional), com duas diferenças:
-> - o **Plano Semanal** fica em "Operacional", por decisão do usuário (ver `UX_LAYOUT.md`, 2026-09-23). Se o menu passa a valer como classificação, ou se esta pirâmide continua sendo a referência, ainda é uma decisão em aberto;
-> - dois grupos ficam **fora** da pirâmide: **Recursos** (ferramentas de apoio) e **Outros Sistemas** (atalhos para os sistemas irmãos).
-
 ### 2.1. Nível 1: Estratégico (Missão, Visão e Valores)
-*   **Definição:** O usuário cadastra sua declaração de Missão pessoal/profissional, sua Visão de futuro e seus Valores (princípios inegociáveis). As três páginas estão implementadas, cada uma com uma página educacional ("📚 Educacional"). Valores foi a última, na v1.39 do Manual Técnico.
+*   **Definição:** O usuário cadastra sua declaração de Missão pessoal/profissional e sua Visão de futuro.
 *   **Inovação - Versionamento Histórico:**
-    *   Toda alteração nesses campos não sobrescreve o registro anterior. Em vez disso, gera um novo registro datado. *(Na implementação atual, cada versão é um registro com `type` e `timestamp` em `planner_strategies`, e não uma chave `missao_YYYY-MM-DD_HH-mm-ss`. A versão "atual" é a mais recente.)*
+    *   Toda alteração nesses campos não sobrescreve o registro anterior. Em vez disso, gera um novo registro salvo no formato: `missao_YYYY-MM-DD_HH-mm-ss`.
     *   Uma interface dedicada exibe uma tabela descrescente com as versões anteriores.
     *   **Por que isso é importante?** Permite ao usuário observar a evolução de sua maturidade, o aumento de clareza e o refinamento de seus objetivos de vida ao longo dos anos.
 
@@ -66,25 +73,14 @@ A partir dos objetivos estabelecidos, o usuário os divide em blocos acionáveis
 
 ## 3. Módulos e Funcionalidades Core (Existentes ou em Progresso)
 
-Para dar suporte prático a essa filosofia, o extPlanner integra os seguintes módulos. A coluna **Situação** reflete o app em 2026-09-24; o detalhe técnico de cada um está no `MANUAL_TECNICO.md`.
+Para dar suporte prático a essa filosofia, o extPlanner integra os seguintes módulos:
 
-| Módulo | Ideia | Situação |
-| :--- | :--- | :--- |
-| **Rastreador de Hábitos (Habit Tracker)** | Acompanhamento de rotinas integradas à visualização semanal/diária. | 🟡 Existe o questionário de hábitos na página do dia. Bug conhecido: o cadastro e o widget usam chaves de dados diferentes (`pendencias.md`). |
-| **Gestão de Pendências e Vencidos** | Tarefas não concluídas que transitam de forma inteligente para que o usuário não as perca de vista. | 🟡 Parcial: "Foco da Semana" (tarefas sem dia) e transferência de atividades entre dias/planos. |
-| **Controle Financeiro Essencial** | Contas a pagar e a receber com estimativas de valores. | ⚪ Não iniciado no app. Existem sistemas irmãos para isso (Gestor de Orçamento/Investimentos), candidatos a "Outros Sistemas". |
-| **Lista de Desejos / Coisas para Comprar** | Organizada por categorias editáveis, servindo como base de monetização futura por meio de links de afiliados. | 🟢 **Lista de Compras** (menu Recursos, v1.43): categorias, preço estimado, fornecedores com link, "comprado" e prévia de ofertas de marketplaces (ainda com dados de exemplo). |
-| **Bloco de Notas / "Brain Dump"** | Espaço rápido para descarregar pensamentos e ideias antes de serem organizados. | 🟡 Existe o "Diário" da página do dia; um "brain dump" geral ainda não existe. |
-| **Engine de Impressão (A4)** | Relatórios semanais (`wXX_relatorio.pdf`) e diários formatados para papel, para imprimir e trabalhar fisicamente. | 🟡 Parcial: existem regras de impressão (`@media print`) e um relatório com todas as anotações do Diário. O relatório semanal A4 ainda não existe; os botões 🖨️ dos cards de dia não têm ação, e o botão "Relatório" do cabeçalho, que também não tinha, foi removido (v1.38). |
-
-### 3.1. Recursos (ferramentas de apoio, fora da pirâmide)
-Ferramentas que apoiam a execução, mas não são um nível de planejamento. Ficam no grupo **Recursos** do menu:
-*   **⏰ Alarmes / Lembretes:** avisos do sistema (com som) no horário programado; diário, único ou semanal. Funciona enquanto houver uma aba do Planner aberta.
-*   **🍅 Pomodoro:** ciclos de foco e pausa com aviso ao fim de cada período.
-*   **🛒 Lista de Compras:** ver a tabela acima.
-
-### 3.2. Outros Sistemas
-Grupo do menu reservado para atalhos aos sistemas irmãos desta coleção de extensões. Está vazio por enquanto; os candidatos estão em `pendencias.md`.
+*   **Rastreador de Hábitos (Habit Tracker):** Acompanhamento de rotinas integradas à visualização semanal/diária.
+*   **Gestão de Pendências e Vencidos:** Tarefas não concluídas que transitam de forma inteligente para que o usuário não as perca de vista.
+*   **Controle Financeiro Essencial:** Contas a pagar e a receber com estimativas de valores.
+*   **Lista de Desejos / Coisas para Comprar:** Organizada por categorias editáveis, servindo como base de monetização futura por meio de links de afiliados.
+*   **Bloco de Notas / "Brain Dump":** Espaço rápido para descarregar pensamentos e ideias antes de serem organizados.
+*   **Engine de Impressão (A4):** Capacidade de gerar relatórios semanais (`wXX_relatorio.pdf`) e diários formatados para papel, permitindo que o usuário imprima e trabalhe fisicamente quando preferir.
 
 ---
 
@@ -126,5 +122,4 @@ Como desenvolvedores, valorizamos rastrear como a clareza e as soluções amadur
 | Versão | Data/Hora (Timestamp) | Responsável | Resumo das Alterações / Evolução da Clareza | Arquivo de Histórico |
 | :---: | :--- | :--- | :--- | :--- |
 | **1.0** | 2026-09-17_23-50-00 | Desenvolvedor (User) | Redação conceitual inicial contendo as ideias fundamentais, a pirâmide de planejamento e a premissa de versionamento com timestamp. | `historico/Sobre_extPlanner_20260919_original.md` |
-| **2.0** | 2026-09-19_15-45-00 | Gemini CLI & User | Reestruturação completa do documento em seções formais, detalhamento de módulos, adição de áreas de ampliação e criação do link com o Manual Técnico. | `historico/Sobre_extPlanner_20260919_v2.0.md` |
-| **2.1** | 2026-09-24_02-30-00 | Claude Code (Opus 5.5) & User | Atualização factual, sem mudar a visão: removida a seção "1. Visão Geral e Propósito", que estava duplicada; Valores marcado como implementado; nota sobre como a pirâmide aparece no menu (Plano Semanal em Operacional, decisão ainda em aberto; grupos Recursos e Outros Sistemas); tabela de módulos com a situação de cada um; novas subseções Recursos (Alarmes, Pomodoro, Lista de Compras) e Outros Sistemas. | *Este arquivo (Versão Atual)* |
+| **2.0** | 2026-09-19_15-45-00 | Gemini CLI & User | Reestruturação completa do documento em seções formais, detalhamento de módulos, adição de áreas de ampliação e criação do link com o Manual Técnico. | *Este arquivo (Versão Atual)* |

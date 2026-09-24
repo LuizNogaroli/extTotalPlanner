@@ -1,5 +1,12 @@
 # Análise de Manutenibilidade: app.js Pós-Refatoração
 
+> ⚠️ **Documento histórico (foto de 2026-09-19), não reflete o estado atual.** Em 2026-09-24:
+> - o `js/app.js` tem **3.188** linhas (aqui: 2.673);
+> - ele importa 3 módulos: `crudModal.js`, `listaCompras.js` e `pomodoro.js`;
+> - vários módulos citados como parte da arquitetura estão **mortos**: `modal.js`, `views.js`, `renderer.js`, `manager.js` e os `form*.js` fora de `crud/`.
+>
+> A avaliação "✅ bem organizado" também não considerava os bugs de chave de storage achados depois (Alarmes, Compras, Contextos/Categorias/Hábitos). Para o estado atual, veja `MANUAL_TECNICO.md` §2 e §4, e `pendencias.md`.
+
 **Data:** 2026-09-19
 **Responsável:** Claude Code
 

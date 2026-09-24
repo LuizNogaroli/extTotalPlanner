@@ -8,20 +8,55 @@ Este documento atua como um **Mapa Técnico** e **Playbook de Soluções Reutili
 
 O extPlanner adota o padrão **SPA (Single Page Application) em Vanilla JavaScript** estruturado sob princípios de modularização limpa.
 
+* **Tipo de app:** extensão Chrome **Manifest V3** que substitui a **Nova Aba** (`chrome_url_overrides.newtab = index.html`). Não há service worker. Permissões: `storage` e `notifications` (a segunda concede a API `Notification` na extensão instalada, §3.23).
+* **Sem etapa de build:** `index.html` carrega scripts clássicos (`js/services/*.js`, `js/dragAndDrop.js`) e um módulo ES (`js/app.js`), que importa `js/modules/crudModal.js`, `listaCompras.js` e `pomodoro.js`.
+* **Estilo:** `css/tailwind.css` é o **build completo do Tailwind v2.2.19, sem JIT**. Ele não tem nenhuma classe com valor arbitrário (§3.21). O tema claro/escuro vem de variáveis CSS em `css/themes.css`, trocadas por `data-theme` no `<body>`. Componentes novos usam CSS próprio em `css/styles.css` (prefixos `nav-`, `lc-`, `pm-`).
+* **Dados:** tudo passa pelo `StorageService`, que usa `chrome.storage.local` na extensão e `localStorage` fora dela. A exceção são os estados compartilhados entre abas, que usam o `localStorage` direto (Mapa de dados, §4.1).
+* **Teste local:** `rodar.bat` sobe um servidor sem cache em `localhost:8000` (§3.16). O app roda igual no navegador comum, com os dados no `localStorage`.
+
 ---
 
 ## 2. Estrutura de Diretórios e Responsabilidades
 
+Raiz do repositório: `C:\Users\luizn\Documents\07-PROJETOS\extTotalPlanner\`. A pasta `ext-planner/` dentro dela é uma cópia paralela antiga, **fora do Git** (ver `pendencias.md` 6.1).
+
 ```
-C:\Users\luizn\Documents\07-PROJETOS\ext-planner\
+extTotalPlanner/
+├── manifest.json            # MV3, newtab override; permissões storage + notifications
+├── index.html               # Estrutura única da SPA: sidebar, header, sub-header, todas as views e modais
+├── rodar.bat                # Servidor de teste local (§3.16)
+├── CLAUDE.md / GEMINI.md    # Diretrizes para as IAs (mantidos iguais)
 ├── css/
+│   ├── tailwind.css         # Tailwind v2.2.19 completo, SEM JIT (§3.21)
+│   ├── themes.css           # Variáveis de tema (claro/escuro, tamanho de fonte)
+│   └── styles.css           # CSS próprio: menu (nav-), Lista de Compras (lc-), Pomodoro (pm-), impressão, utilitários
+├── locales/pt-BR.json       # Textos do I18nService
 ├── js/
-│   ├── app.js            # Orquestrador principal (Bootstrap)
-│   ├── modules/          # Módulos ES6 (modal.js, views.js, renderer.js, manager.js)
-│   └── services/         # Serviços puros (StorageService, etc.)
-├── docs/                 # Documentações e históricos
-└── index.html            # Estrutura única (View SPA)
+│   ├── app.js               # Orquestrador (módulo ES): roteamento das views, planos, atividades, gerenciador, widgets, appRouter
+│   ├── dragAndDrop.js
+│   ├── services/            # Scripts clássicos, expostos em window.*
+│   │   ├── StorageService.js      # chrome.storage.local ↔ localStorage
+│   │   ├── ThemeService.js        # tema, fonte, layout da semana
+│   │   ├── I18nService.js
+│   │   ├── NotificationService.js # alarmes: motor, permissão, som (§3.23)
+│   │   └── ContentService.js      # listas dos widgets do dia
+│   └── modules/
+│       ├── crudModal.js           # modal de cadastro genérico (usa crud/*)
+│       ├── crud/formMappers.js    # registro dos tipos de formulário (chave de storage, campos)
+│       ├── crud/formLoaders.js    # preencher/extrair formulários
+│       ├── crud/formValidators.js
+│       ├── listaCompras.js        # Lista de Compras (§3.24)
+│       └── pomodoro.js            # Pomodoro (§3.25)
+└── docs/
+    ├── Sobre_extPlanner.md  # visão do produto
+    ├── MANUAL_TECNICO.md    # este arquivo
+    ├── pendencias.md        # tudo que precisa de correção + ideias
+    ├── UX_LAYOUT.md         # decisões de layout
+    ├── header.md / sub-header.md  # detalhamento por componente
+    └── historico/           # um arquivo por mudança
 ```
+
+**Código morto (não carregado, candidato a remoção, `pendencias.md` 3.1):** `js/modules/modal.js`, `views.js`, `renderer.js`, `manager.js`, `crud/index.js` e os `formLoaders.js`/`formMappers.js`/`formValidators.js` que ficam **fora** de `crud/`. Não editar esses arquivos achando que afetam o app. A raiz também tem 44 scripts avulsos de sessões antigas (`fix_*.py`, `patch_*.py`, `test_*.js`…), listados em `pendencias.md` 3.4.
 
 ---
 
@@ -42,12 +77,12 @@ C:\Users\luizn\Documents\07-PROJETOS\ext-planner\
 ### 3.4. Comunicação Desacoplada
 *   **Solução:** Eventos customizados (`window.dispatchEvent`) para comunicar mudanças de estado entre serviços e UI.
 
-### 3.5. Sistema de Notificações via Service Worker
-*   **Arquivo:** `background.js`
-*   **Solução:** Migração para `chrome.alarms` no background para disparos garantidos.
+### 3.5. Sistema de Notificações — ⚠️ SUPERSEDIDA pela 3.19
+*   ~~**Arquivo:** `background.js`~~ **Arquivo removido em 2026-09-23.**
+*   ~~**Solução:** Migração para `chrome.alarms` no background para disparos garantidos.~~ Essa abordagem (`chrome.alarms`/`chrome.notifications` num Service Worker) foi **abandonada** — só funcionava dentro de uma extensão instalada de verdade, tornando o recurso impossível de testar via `rodar.bat`. Ver **seção 3.19** para a arquitetura atual (`Notification` padrão, no cliente).
 
-### 3.6. Navegação Estratégica no Cabeçalho
-*   **Solução:** Separação estática (Anual/Mensal/Semanal) e dinâmica (`#dynamic-header-tabs`).
+### 3.6. Navegação Estratégica no Cabeçalho — ⚠️ desatualizada, ver `docs/header.md` e `docs/sub-header.md`
+*   ~~**Solução:** Separação estática (Anual/Mensal/Semanal) e dinâmica (`#dynamic-header-tabs`).~~ Os botões estáticos Anual/Mensal/Semanal foram removidos na v1.24. Hoje o centro do header tem o breadcrumb Ano › Mês › Semana (v1.30/1.31), e `#dynamic-header-tabs` é o sub-header com os 7 dias da semana. O detalhamento técnico completo, com os problemas conhecidos, está em **[`header.md`](header.md)** e **[`sub-header.md`](sub-header.md)**.
 
 ### 3.7. Modularização do Código (ES Modules)
 * **Arquivos:** `js/modules/*.js`
@@ -111,6 +146,17 @@ C:\Users\luizn\Documents\07-PROJETOS\ext-planner\
  * **Padrão:** O arquivo é **auto-contido**: embute o código do servidor Python em Base64 dentro de um `powershell -Command` que decodifica e escreve `server.py` temporário, e depois roda `python server.py`/`py server.py` (fallback). O servidor envia `Cache-Control: no-store` em **todas** as respostas e força `Content-Type: text/javascript` para arquivos `.js` (corrige o sintoma de 3.11 sem depender de hard reload). A própria janela do `cmd` é mantida aberta (título "extPlanner Servidor") e o navegador é aberto em `http://localhost:8000` via `start`.
  * **Detalhe de implementação (Windows):** o redireciono de entrada do `powershell -Command` precisa de `<nul` no final da linha, senão ele trava esperando stdin ("Redirecionamento de entrada do arquivo... impossível"). Esse é o formato atual que funciona.
  * **Regra para o futuro:** Para qualquer teste ponta-a-ponta/MVP no navegador, rode `rodar.bat` e acesse pelo `localhost` — não é necessário empacotar a extensão. Para limpar estado, limpe o `localStorage` do `localhost:8000` no DevTools (não afeta a extensão instalada).
+* **Revisão v1.44 (2026-09-24):** o servidor embutido original **travava** o carregamento da página: ele atendia uma requisição por vez, e o Chrome abre conexões "de reserva" que ficam ociosas. Verificado: a página ficou parada em 3 requisições, sem nenhum JavaScript carregado. Havia também um conflito silencioso de porta: `allow_reuse_address` no Windows deixa dois servidores escutarem a mesma porta (verificado), e o navegador podia mostrar outro projeto que também estivesse na 8000. O servidor foi reescrito:
+  - `ThreadingHTTPServer`, com uma thread por conexão;
+  - porta 8000 ou a próxima livre, detectada **sondando** 127.0.0.1 e ::1 antes de ocupar, porque só o erro do `bind` não basta no Windows;
+  - sem `SO_REUSEADDR` e com `SO_EXCLUSIVEADDRUSE`;
+  - escuta só em `127.0.0.1`, sem expor os arquivos na rede nem acionar o firewall;
+  - o próprio servidor abre o navegador **depois** de estar pronto, no lugar do `timeout /t 2`;
+  - a janela do servidor usa `cmd /k`, e continua aberta se der erro;
+  - o Python é procurado primeiro pelo lançador `py -3` (`python` pode ser o atalho da Microsoft Store);
+  - o `.bat` foi regravado com quebras **CRLF** e só ASCII.
+
+  Se a 8000 estiver ocupada, os dados de teste (`localStorage`, que é por origem/porta) não aparecem na porta nova, e o servidor avisa isso. O código-fonte legível do servidor está em `docs/historico/rodar_bat_revisao_20260924_0200.md`. Para alterá-lo, edite essa fonte, gere o Base64 e substitua a string no `.bat`.
 
 ### 3.17. Atividades Integradas aos Planos (Filtragem por Período via `transferPeriodo`)
 * **Arquivo:** `js/app.js` (`renderPlanoVersionado`)
@@ -140,25 +186,205 @@ C:\Users\luizn\Documents\07-PROJETOS\ext-planner\
 * **Estado vazio:** Se não há atividades para o período, exibe mensagem: *"Nenhuma atividade neste período. Clique em "+ Adicionar" para criar uma."*
 * **Regra para o futuro:** Esse é o padrão a reaproveitar para qualquer entidade "muitos por período" (ex.: marcos, milestones, check-ins) que precise aparecer contextualizada dentro de um Plano. A chave é sempre usar `transferPeriodo` como campo de linkagem (não vinculação direta por foreignKey, mas por matching de período).
 
+### 3.18. Alarmes/Notificações Push: Cadeia de 7 Quebras Independentes Causadas por Refactor Dessincronizado
+* **Arquivos:** `index.html` (form-alarme), `js/modules/crud/formMappers.js`, `js/modules/crud/formLoaders.js`, `js/modules/crud/formValidators.js`, `js/modules/crudModal.js`, `js/app.js`, `background.js`.
+* **Contexto:** O usuário reportou que "a funcionalidade de push no desktop... ainda não funciona". Investigação revelou que o recurso estava **completamente inoperante desde a Fase 1 da refatoração CRUD (v1.26)** — o registro `alarme` criado em `crud/formMappers.js` usava um schema em português (`titulo`/`hora`/`recorrencia`/`diasemana`, storage key `planner_alarmes` plural) que nunca foi conectado ao HTML real nem ao motor de notificações, que continuavam usando o schema original em inglês (`title`/`time`/`recurrence`/`weekdays`, storage key `planner_alarme` singular). Eram dois sistemas paralelos que nunca se falaram.
+* **As 7 quebras, na ordem em que bloqueavam o fluxo:**
+  1. **IDs de campo não batiam:** `crud/formMappers.js` esperava inputs `#alarme-titulo`/`#alarme-tipo`/`#alarme-hora`/`#alarme-recorrencia` — o HTML real usa `#alarme-title`/`#alarme-time`/`#alarme-recurrence`. `extractFormData` nunca encontrava os campos.
+  2. **Validação falhava sempre, silenciosamente:** `titulo`/`tipo` (sempre `undefined`) eram obrigatórios; `FormLoaders.displayErrors` tentava exibir o erro em `#alarme-titulo-error` (não existe no HTML) — o erro era engolido e o clique em "Salvar" não fazia nada visível.
+  3. **Chave de storage divergente:** o CRUD gravava em `planner_alarmes` (plural); `background.js` e a listagem "Lembretes e Alarmes" liam `planner_alarme` (singular).
+  4. **`background.js` ignorava recorrência:** todo alarme (inclusive "único") era agendado com `periodInMinutes: 1440`, repetindo para sempre; "semanal" nem existia como opção no `<select>`.
+  5. **Checkboxes de dias da semana nunca foram recriados** após a reconstrução da v1.29 — `#alarme-weekdays-container` ficou como `<div>` vazio permanentemente oculto.
+  6. **Link "Alarmes" do menu lateral sem `onclick`:** diferente dos irmãos (`Contextos/Papeis` usa `onclick="window.appRouter.openManager(...)"`), o link ficou sem nenhum handler — nem abria o gerenciador.
+  7. **Botão "+ Novo Item" do gerenciador genérico chamava uma função inexistente:** `openModal(currentManagerType)` em `js/app.js` (linha ~1477) — não existe (nem nunca existiu) uma função local `openModal`; o correto é `crudModal.open(...)`, como o resto do arquivo já faz em ~15 outros lugares. Mesmo bug em mais 2 pontos: botão "Editar" da lista do gerenciador (linha ~1458) e "+ Nova Atividade" do modal do dia (linha ~1760). **Este bug afetava TODOS os tipos do gerenciador genérico** (Compras, Histórico, Motivacional, Devocional, Categorias, Hábitos), não só Alarmes.
+  8. *(bônus, achado ao testar ponta-a-ponta)* **`CRUDModal.save()` nunca gerava `id` para registro novo** — o input oculto `#<tipo>-id` fica vazio na criação, então `formData.id` chegava `null`; como `save()` faz `items.findIndex(i => i.id === formData.id)`, o **segundo** registro criado (também com `id: null`) **sobrescrevia** o primeiro em vez de ser adicionado. Também afetava todos os tipos do CRUD genérico, não só Alarmes.
+* **Solução:** (a) `crud/formMappers.js`: schema do `alarme` reescrito para bater com o HTML real (`storageKey: 'planner_alarme'`, campos `title/time/recurrence/date/weekdays`); (b) `crud/formLoaders.js`: `handleAlarmeConditionals` corrigida para os IDs reais + suporte à recorrência `'semanal'`, e `extractFormData`/checkboxes de dias tratados como caso especial (`.alarme-weekday-checkbox:checked`); (c) `crud/formValidators.js`: `validateAlarme` reescrita para os novos nomes de campo; (d) `index.html`: adicionada opção "Semanal" no select e os 7 checkboxes de dias (valores `'0'`-`'6'`, mesma convenção de `Date.getDay()` já usada em `renderManagerList`); (e) `background.js`: `scheduleAlarms()` agora trata `'unico'` como alarme de disparo único (`when` sem `periodInMinutes`, ignorado se data já passou) e `'semanal'`/`'diario'` continuam com o alarme diário de `chrome.alarms`, mas o `onAlarm` listener agora filtra `'semanal'` pelo dia da semana atual (`new Date().getDay()`) antes de disparar a notificação; (f) `index.html`: link "Alarmes" ganhou `onclick="window.appRouter.openManager('alarme')"` e ícone ⏰; (g) `js/app.js`: as 3 chamadas a `openModal(...)` inexistente trocadas por `crudModal.open(...)`; (h) `crudModal.js`: `handleSubmit` gera `formData.id = Date.now().toString()` quando o id vem vazio.
+* **Validação:** Testado ponta-a-ponta via servidor local (fallback `localStorage`): criar alarme diário, único (com data) e semanal (com dias marcados) — todos persistem em `planner_alarme` com o schema correto, aparecem na listagem formatados corretamente, edição pré-preenche os campos (incluindo checkboxes de dias), exclusão remove só o item certo, e dois alarmes distintos não se sobrescrevem mais. **Limitação conhecida:** o disparo real da notificação (`chrome.alarms`/`chrome.notifications` em `background.js`) só roda dentro de uma extensão Chrome instalada de fato (`chrome://extensions` → carregar sem compactação) — não é possível verificar esse último elo via servidor local/`rodar.bat`, pois essas APIs não existem em uma aba comum.
+* **Regra para o futuro:** Ao criar um registro novo em `crud/formMappers.js` para um tipo que já existe informalmente no projeto (HTML/JS antigos), **sempre grep pelos IDs reais do HTML e pelos consumidores existentes do storage** antes de definir `fields`/`storageKey` — não assumir ou "modernizar" nomenclatura sem atualizar todos os consumidores na mesma mudança. Depois de qualquer alteração em `crud/formMappers.js`, testar o ciclo completo (criar → listar → editar → excluir → criar um segundo registro) via `rodar.bat`, não só o `open()` do modal.
+
+### 3.19. Notificações via `Notification` Padrão (não `chrome.notifications`) — Testável Fora da Extensão
+> ⚠️ **Revisada na v1.42 (§3.23):** o motor descrito abaixo (comparação do minuto exato + debounce só em memória) disparava em duplicata com várias abas abertas e perdia alarmes quando o minuto era "pulado". A permissão `"notifications"` voltou ao manifest. A escolha da API `Notification`, o botão de 3 estados e a técnica de teste com espião continuam valendo.
+
+* **Arquivos:** `js/services/NotificationService.js`, `js/app.js` (início do `DOMContentLoaded`, botão em `view-settings`), `manifest.json` (permissões reduzidas), `background.js` (**removido**).
+* **Contexto/Decisão:** Inspirado em `extListaDeCompras/docs/notifications-and-sound.md` (projeto irmão, ver `extDocumentacao`). A limitação registrada em `docs/pendencias.md` após a §3.18 — "só dá pra confirmar o disparo real instalando a extensão" — foi eliminada trocando a arquitetura: em vez de `chrome.alarms` + `chrome.notifications` num Service Worker (que só existe dentro de uma extensão instalada), passou a usar a **Web API `Notification` padrão**, que funciona idêntica tanto instalada quanto rodando como página comum via `rodar.bat`.
+  | | `Notification` (escolhida) | `chrome.notifications` (removida) |
+  |---|---|---|
+  | Onde funciona | Qualquer aba, instalada ou não | Só extensão instalada |
+  | Permissão no manifest | Nenhuma | `"notifications"` |
+  | Dispara com a aba fechada | Não | Sim (se o Service Worker acordar) |
+  | Testável via `rodar.bat` | Sim | Não |
+  A trade-off aceita: o alarme só dispara enquanto **alguma aba do Total Planner (New Tab) estiver aberta** — como é uma extensão de New Tab override, isso cobre a maior parte do uso real (basta ter uma aba nova aberta em algum lugar), mas não é 100% garantido como o Service Worker seria.
+* **Arquitetura implementada** (`NotificationService.js`, classe recriada do zero):
+  - `getPermission()` / `requestPermission()`: espelham `Notification.permission`/`Notification.requestPermission()`.
+  - `notify(title, body)`: só dispara se `Notification.permission === "granted"`.
+  - `start()`: liga um `setInterval` de 20s chamando `checkAlarms()` (chamado uma vez no boot do `app.js`, idempotente — chamar de novo não duplica o interval).
+  - `checkAlarms()`: lê `planner_alarme` do `StorageService`, compara `HH:mm` atual com `alarm.time`, e filtra por `recurrence` (`'unico'` exige `date` igual a hoje; `'semanal'` exige o dia da semana atual em `weekdays`; `'diario'` sempre passa) — mesma lógica de recorrência de `renderManagerList()` (§3.18), agora compartilhada conceitualmente entre exibição e disparo. Debounce por `lastFiredKey[alarm.id] = 'YYYY-MM-DDTHH:mm'` evita disparo duplicado dentro do mesmo minuto (o interval roda a cada 20s, ou seja, ~3x por minuto).
+* **Botão de permissão (3 estados), em `view-settings`:** `🔔 Ativar notificações` (habilitado, `default`) → clique chama `requestPermission()` → `🔔 Notificações ativas` (desabilitado, `granted`) ou `🔕 Notificações bloqueadas` (desabilitado, `denied`). **Armadilha:** uma vez `denied`, o navegador nunca mostra o prompt de novo — por isso o botão fica desabilitado nesse estado em vez de deixar o usuário clicar de novo achando que vai adiantar algo (reversão só manual, no cadeado da barra de endereço → Notificações → Permitir).
+* **`manifest.json` simplificado:** `permissions` reduzido a `["storage"]` (removidos `"alarms"` e `"notifications"`, que só serviam ao `chrome.alarms`/`chrome.notifications` descartados); chave `"background"` removida por completo (não há mais Service Worker no projeto). `background.js` foi deletado.
+* **Como testar a lógica sem depender de permissão real do SO:** ambientes de automação (inclusive o navegador embutido usado nas sessões de IA) bloqueiam `Notification.permission` como `"denied"` por padrão, de propósito. Para verificar a lógica de disparo sem depender disso, substituir o global antes de exercitar o fluxo:
+  ```js
+  window.__notifs = [];
+  class FakeNotification {
+    static permission = "granted";
+    static requestPermission() { return Promise.resolve("granted"); }
+    constructor(title, opts) { window.__notifs.push({ title, body: opts?.body ?? "" }); }
+  }
+  window.Notification = FakeNotification;
+  // ...popular localStorage.planner_alarme e chamar window.NotificationService.checkAlarms()...
+  // window.__notifs mostra exatamente o que teria sido notificado, sem nenhum toast real.
+  ```
+  Isso só confirma **o quê e quando** notifica — para confirmar que o toast realmente aparece na tela (e o som, se algum dia for adicionado), só testando num navegador de verdade, fora de sandbox.
+* **Regra para o futuro:** Se precisar garantir disparo com a aba fechada (ex.: alarmes críticos), a alternativa seria reintroduzir `chrome.alarms`/`chrome.notifications` **em paralelo** — mas isso reabre o risco de notificação duplicada (client-side + Service Worker disparando o mesmo alarme) e volta a exigir extensão instalada para testar. Antes de fazer isso, considerar se o caso de uso realmente precisa — para um planner pessoal com New Tab override, a aba costuma estar aberta na maior parte do dia de uso.
+
+### 3.20. `#view-dashboard` Sem Fechamento — Views Seguintes Ficavam Aninhadas e Invisíveis (Variante da 3.8)
+* **Arquivos:** `index.html` (em torno das linhas 146-290).
+* **Problema (pré-existente, achado ao testar a 3.19):** a `<div id="view-dashboard">` (linha 146) nunca tinha seu `</div>` de fechamento no lugar certo — faltava logo após o fechamento de `#daily-view-wrapper`. Havia, em compensação, um `</div>` "sobrando" bem mais adiante (depois de `#view-settings` fechar). Resultado: `#view-settings` (e, por tabela, `#view-reports` e tudo que vem depois) ficava **aninhada como filha de `#view-dashboard`** em vez de ser irmã dela dentro de `<main>`. O toggle de classe `hidden`/`flex` (`hideAllViews()`) continuava "funcionando" tecnicamente em cada elemento individual, mas como `#view-dashboard` ficava com `hidden` ativo ao navegar para Configurações, tudo dentro dela (inclusive `#view-settings`, já sem `hidden`) ficava invisível — sintoma idêntico ao já catalogado na **seção 3.8**, causa raiz diferente (aqui é uma tag não fechada, lá era a view inteira solta fora de `<main>`).
+* **Diagnóstico:** contagem de abertura/fechamento de `<div>` a partir da linha da view suspeita (script Python simples) apontou o desbalanceamento exato; confirmado no navegador com `element.parentElement` em cadeia até `<html>`.
+* **Solução:** movido o `</div>` que fechava `#view-dashboard` (estava depois de `#view-settings`) para o lugar certo, logo após `#daily-view-wrapper` fechar. Nenhuma mudança de contagem total de divs no arquivo (um inserido, um removido).
+* **Nota:** o arquivo ainda tem um desbalanceamento de `-1` `</div>` a mais que `<div>` no total (constatado via contagem simples, já existia antes desta sessão, ver `git show HEAD:index.html` da época) — não relacionado a este bug específico (não afeta nenhuma view conhecida) e não foi investigado/corrigido agora por estar fora do escopo desta mudança.
+* **Regra para o futuro:** Sempre que uma view "não aparece" mesmo com o toggle de `hidden` aparentemente correto, antes de mexer no JS, checar `document.getElementById(viewId).parentElement` (deveria ser sempre `<main>` diretamente, nunca outra view) — é mais rápido que ler o HTML inteiro à procura de uma tag não fechada.
+
+### 3.21. `css/tailwind.css` É o Tailwind v2.2.19 Sem JIT — Classes Arbitrárias Não Existem
+* **Arquivos:** `css/tailwind.css` (minificado, uma linha só), `css/styles.css`.
+> **Correção do diagnóstico (v1.45):** o arquivo não é um build "das classes em uso". É o **build padrão completo do Tailwind v2.2.19** (cabeçalho `/*! tailwindcss v2.2.19 */`, 2,9 MB), gerado **sem o modo JIT**. Nesse modo, o Tailwind **nunca** gera classes com valor arbitrário (`text-[…]`, `bg-[…]`, `border-[…]`, `min-w-[…]`…), variantes como `group-open:`, cores fora da paleta padrão de 8 (`amber`, `orange`), `line-clamp` nem, sem configuração, as variantes `dark:`. Ou seja, o padrão de tema usado no HTML inteiro (`text-[var(--text-secondary)]`, `border-[var(--border-color)]`…) **nunca foi aplicado**. Verificado: `text-[var(--text-secondary)]` sai com a cor principal (#333, e não #666), e no tema escuro as bordas ficam #e5e7eb, e não #374151. Uma auditoria achou 66 classes usadas que não existem no build. A decisão de como resolver está em `pendencias.md` 2.1. Só funcionam os poucos "utilitários de emergência" definidos à mão em `css/styles.css`.
+
+* **Problema:** o Tailwind local é carregado como arquivo, sem CDN (a CSP do Manifest V3 não permite). Qualquer classe arbitrária ou variante fora do padrão, **nova ou antiga** (ex.: `from-[var(--primary-color)]`, `group-open:rotate-90`, `text-[var(--text-secondary)]`), é simplesmente ignorada pelo navegador, sem erro.
+* **Casos já constatados:**
+  - O card "Atual" das páginas de Missão, Visão, Valores e Planos usa `bg-gradient-to-br from-[var(--primary-color)] via-[var(--primary-color)]/90 to-[var(--primary-color)]/75`. `bg-gradient-to-br` existe, mas as três classes de cor não. Resultado: o card fica sem fundo e o título branco ("Visão Atual", "Valores Atuais") fica quase invisível sobre fundo claro. **Ainda não corrigido** (ver `pendencias.md`).
+  - A seta ▶ dos grupos do menu lateral (`transform group-open:rotate-90`) nunca girou. Resolvido em CSS próprio (§3.22).
+* **Auditoria de todas as classes ausentes:** extrair os tokens de `class="..."` de `index.html`/`js/app.js`, escapar cada um como seletor CSS (`:` → `\:`, `[` → `\[`, `(` → `\(`, `/` → `\/`…) e procurar o seletor em `css/tailwind.css` e `css/styles.css`. Grave o script num arquivo `.py`: o Bash das sessões de IA come as barras invertidas de heredocs.
+* **Como checar uma classe:** `python -c "print(r'.from-\[var\(--primary-color\)\]' in open('css/tailwind.css', encoding='utf-8').read())"`. O seletor precisa estar escapado como no CSS gerado.
+* **Regra para o futuro:** antes de usar uma classe Tailwind com valor arbitrário (`[…]`), variante (`group-open:`, `dark:`…) ou cor fora da paleta padrão, confirmar que ela existe no build. **Estar em uso em outro arquivo do projeto não prova que funciona:** 66 classes em uso não existem no build. Se não existir, escrever a regra em `css/styles.css` com as variáveis de tema (`var(--primary-color)` etc.). Recompilar o Tailwind também resolveria, mas mudaria o arquivo inteiro e exigiria configurar a ferramenta de build.
+
+### 3.22. Hierarquia Visual do Menu Lateral (Classes `nav-*`)
+* **Arquivos:** `index.html` (`<nav>` do `#sidebar`), `css/styles.css` (bloco "MENU LATERAL").
+* **Estrutura:**
+  - **1º nível:** `<summary class="nav-group-btn">` (Estratégico, Tático, Operacional, Recursos, Outros Sistemas) e `<a class="nav-top-btn">` (Contextos/Papeis, Configurações). São botões com borda de 1px e cantos arredondados (10px). Grupo aberto (`details[open]`): borda e fundo levemente tingidos com a cor primária, texto na cor primária e seta ▶ girada 90°.
+  - **2º nível:** `<div class="nav-sub">` com os `<a class="nav-subitem">`. Fica recuado 14px, sobre um fundo suavizado (primária a 4% sobre `--bg-panel`) e com um fio guia de 2px à esquerda (primária a 30%). Os itens usam `--text-secondary`. No hover, ganham fundo tingido e texto na cor primária.
+  - **Item ativo:** o `app.js` continua sinalizando com `bg-[var(--border-color)] font-bold` (ex.: "Meu Planner", "Configurações"). O CSS aproveita `.nav-subitem.font-bold` / `.nav-top-btn.font-bold` para dar fundo tingido e texto na cor primária. Não foi preciso mudar o JS.
+  - **Tema escuro:** a primária `#4f46e5` tem pouco contraste sobre o painel escuro. Por isso, em `[data-theme="dark"]`, os textos destacados do menu usam `color-mix(in srgb, var(--primary-color) 50%, #fff)`.
+* **Tons derivados:** todas as cores intermediárias vêm de `color-mix(in srgb, var(--primary-color) X%, var(--bg-panel))`. Assim elas acompanham o tema sem novas variáveis em `themes.css`. `color-mix` é suportado no Chrome desde a versão 111.
+* **Regra para o futuro:** um item novo no menu lateral só precisa de `class="nav-subitem"` (dentro de um grupo) ou `class="nav-top-btn"` (item solto no rodapé). Não copiar as classes Tailwind antigas (`block py-1 px-3 rounded hover:bg-...`).
+
+### 3.23. Motor de Alarmes Robusto: Várias Abas, Minuto Perdido e Som
+* **Arquivos:** `js/services/NotificationService.js` (reescrito), `js/app.js` (UI de permissão compartilhada, ramo `alarme` do `crudSave`, `openManager`), `index.html` (faixa `#manager-notificacoes` no gerenciador), `manifest.json`.
+* **Referência:** `extListaDeCompras/docs/notifications-and-sound.md`. De lá vieram `getPermission`/`requestPermission`/`notify`, o botão de 3 estados com dica quando bloqueado e o som sintetizado (Web Audio). O resto desta seção existe porque lá a notificação dispara **no clique do usuário**, enquanto aqui ela é **agendada**, e isso cria problemas que a referência não tem.
+* **Problemas reproduzidos (antes da v1.42):**
+  1. **Duplicata entre abas.** Extensão de New Tab = várias abas abertas, cada uma com seu próprio motor e seu próprio `lastFiredKey` em memória. Duas abas no minuto do alarme davam 2 avisos.
+  2. **Duplicata ao recarregar.** Abrir ou recarregar uma aba no minuto do alarme criava uma instância "zerada", e o aviso saía de novo.
+  3. **Alarme perdido.** A regra `alarm.time === "HH:mm"` exige uma verificação exatamente naquele minuto. O Chrome reduz timers de abas em segundo plano (até ~1x/min), e com o PC suspenso o minuto pode ser pulado inteiro. Nesses casos o alarme simplesmente não disparava.
+* **Solução:**
+  - **Registro de disparos compartilhado:** `localStorage['planner_alarme_disparos'] = { [alarmId]: 'YYYY-MM-DDTHH:mm' }`. O `localStorage` é compartilhado entre as abas da mesma origem, e é síncrono, o que facilita o "ler e gravar" dentro da trava. Uma cópia em memória serve de reserva se o storage falhar.
+  - **Trava entre abas com Web Locks:** `navigator.locks.request('planner-alarme-check', ...)` serializa a verificação. Sem ela, duas abas leem o registro ao mesmo tempo e ambas avisam.
+  - **Janela de tolerância (`ALARME_GRACE_MS` = 10 min):** em vez do minuto exato, dispara toda ocorrência com `0 <= agora - horário <= 10 min` que ainda não está no registro. As ocorrências de ontem também são verificadas, para cobrir alarmes perto da meia-noite. O corpo do aviso informa o atraso ("aviso com 3 min de atraso").
+  - **Verificação ao voltar para a aba** (`visibilitychange`), sem esperar o próximo tick.
+  - **`markHandled(alarme)` ao salvar ou editar:** marca como tratadas as ocorrências que já passaram. Sem isso, um alarme criado às 20:05 com horário 20:00 dispararia na hora, por causa da tolerância.
+  - **Opções da notificação:** `tag` única por ocorrência (o sistema substitui em vez de empilhar) e `requireInteraction: true` (o aviso fica na tela até ser dispensado). O clique foca a aba e fecha o aviso.
+  - **Som:** "ding-dong" duas vezes, com onda senoidal (A5 → D6), tocado só pela aba que venceu a trava. O `AudioContext` é criado no **primeiro clique ou tecla** da aba, porque navegadores só liberam áudio depois de um gesto. Se a aba nunca recebeu interação, o aviso aparece mesmo assim, só que sem som.
+  - **Permissão onde o usuário lida com o recurso:** faixa no gerenciador "Lembretes e Alarmes" com o botão de 3 estados, um botão **"🔊 Testar aviso"** e um texto de ajuda por estado (inclusive como desbloquear quando está negado). Configurações usa o mesmo `renderNotificacoesUI()`. Salvar um alarme com permissão ainda `default` pede a permissão ali mesmo, aproveitando o gesto do submit.
+  - **`"notifications"` de volta ao `manifest.json`:** a referência diz que ela não é *necessária* para a API `Notification`. Mas numa extensão instalada, declarar essa permissão faz o Chrome conceder a API automaticamente, sem depender de um prompt na página `chrome-extension://`. Não traz de volta `chrome.notifications` nem o `background.js`. *(Não verificado nesta sessão: o navegador embutido não instala extensões.)*
+* **Limitação que continua:** sem nenhuma aba do Total Planner aberta, nada dispara. Quando uma aba abrir até 10 min depois do horário, o alarme ainda sai (com atraso). Depois disso, a ocorrência é perdida. Para garantir disparo com todas as abas fechadas, seria preciso voltar ao `chrome.alarms` num service worker, com o risco de duplicata discutido na §3.19.
+* **Como testar sem permissão real:** trocar `window.Notification` por um espião (§3.19). Para simular várias abas na mesma página, usar instâncias separadas: `new window.NotificationService.constructor().checkAlarms()`. Duas chamadas em `Promise.all` testam a trava.
+
+### 3.24. Lista de Compras Interna (Cópia Adaptada de extListaDeCompras)
+* **Arquivos:** `js/modules/listaCompras.js` (módulo ES), `css/styles.css` (bloco "LISTA DE COMPRAS", prefixo `lc-`), `index.html` (`#view-compras` vazio, dentro de `<main>`), `js/app.js` (instância, menu, widget da página do dia, CSV).
+* **Origem:** o usuário pediu para copiar a solução de `extListaDeCompras`. Mapa de equivalência:
+  | extListaDeCompras (React + backend) | extTotalPlanner (Vanilla JS + StorageService) |
+  | :--- | :--- |
+  | `App.tsx` (estado, filtros, `diffAndNotify`) | `ListaCompras` (`abrir`, `recarregar`, `_render`, `_diffAndNotify`) |
+  | `ProductList.tsx` | `_renderLista()` / `_htmlItem()` (agrupado por categoria, "Sem categoria" por último) |
+  | `ProductForm.tsx` (fornecedores dinâmicos) | `abrirFormulario()` |
+  | `CategoryManager.tsx` | `_abrirCategorias()` (criar, renomear inline, excluir → itens ficam "Sem categoria") |
+  | `MarketplaceSearchPanel.tsx` + `mock/marketplaceSuggestions.ts` | `_htmlCortina()` + `gerarSugestoes()` (dados de exemplo, com o mesmo aviso) |
+  | `format.ts` | `formatCurrency()` (`Intl.NumberFormat` pt-BR, BRL) |
+  | `notifications.ts` / `sound.ts` | `window.NotificationService.notify()` / `playCoinSound()` |
+  | API REST (`api/client.ts`) | `StorageService` direto |
+* **Modelo de dados:** `planner_compras = [{ id, name, description, estimatedPrice, purchased, categoryId, suppliers: [{ id, name, url, price, notes }], createdAt, updatedAt }]` e `planner_compras_categorias = [{ id, name, createdAt }]`, iguais aos tipos de `types.ts` da referência (sem o objeto `category` embutido).
+* **Migração (`carregarDados`, uma vez, flag `planner_compras_migrado_v2`):** converte os dois formatos antigos, que nunca se encontravam (mesmo tipo de bug da §3.18):
+  - `planner_compras` antigo `{ item, detalhes, categoria }`: o que o widget lia;
+  - `planner_lista_compras` `{ item, categoria, quantidade, preco, concluido, loja }`: o que o CRUD genérico gravava, e que por isso nunca aparecia no widget.
+
+  Categorias em texto viram registros de categoria, juntando nomes iguais sem diferenciar maiúsculas; `loja` vira fornecedor; `quantidade` vai para a descrição. `planner_lista_compras` não é apagado.
+* **Diferenças de propósito em relação à referência:**
+  - Todo texto do usuário passa por `esc()` antes do `innerHTML`, e só URLs `http(s)://` viram link (`safeUrl`). Testado com `javascript:alert(1)`, que aparece só como texto.
+  - Filtros "pill" marcados usam a classe `.on` (re-render), e não `:has(input:checked)`.
+  - A faixa de resumo ("X de Y itens a comprar · estimativa pendente") não existe na referência.
+* **Armadilha:** em `<form>`, `form.name` é o atributo `name` do **formulário**, não o campo chamado "name". Use `form.elements.namedItem('name')`.
+* **Widget da página do dia (`renderWidgetCompras()` em `app.js`):** mostra até 8 itens **não comprados**. A caixa grava `purchased` (`alternarComprado`) e tira o item do widget. O nome e "Ver lista completa" abrem a página. "+ adicionar item" abre a página já com o formulário (`abrir({ novoItem: true })`). A lista chama `onChange`, que redesenha o widget.
+
+### 3.25. Pomodoro (Timer Robusto entre Abas)
+* **Arquivos:** `js/modules/pomodoro.js`, `css/styles.css` (bloco "POMODORO", prefixo `pm-`), `index.html` (`#view-pomodoro`), `js/app.js` (instância + `iniciarMotor()` no boot).
+* **Regras:**
+  - Foco (25) → Pausa curta (5), com Pausa longa (15) a cada N focos (padrão 4), tudo configurável.
+  - O próximo período **não** inicia sozinho.
+  - "Pular" avança sem contar o foco. "Zerar" volta o período atual ao início.
+* **Robustez (mesmas lições da §3.23):**
+  - O estado guarda o **instante de término** (`fimEm`), não um contador decrementado.
+  - O fim é detectado por um `setTimeout` **único** agendado para `fimEm`. Timers avulsos sofrem só o throttling leve (~1 s) em aba de segundo plano; o `setInterval` de 250 ms só atualiza a tela e o título.
+  - Estado e configuração ficam no `localStorage` (`planner_pomodoro_estado` / `planner_pomodoro_config`), compartilhados entre abas. O evento `storage` sincroniza as outras abas.
+  - O fim de período roda sob `navigator.locks` ('planner-pomodoro-fim'), relê o estado dentro da trava e marca `ultimoFimProcessado`. Testado: duas instâncias simultâneas → 1 aviso.
+  - O aviso (`notify` + `playAlarmSound`) diz qual é o próximo período. Se o fim for percebido com mais de 1 min de atraso, informa "(terminou às HH:MM)".
+  - Enquanto roda, o título da aba mostra `mm:ss 🍅 · Planner Estratégico`.
+* **Armadilha encontrada no teste:** o contêiner `.pm-app` tem `data-modo` (define a cor do período), e o handler usava `closest('[data-modo]')` para achar os botões de modo. **Qualquer** clique caía em "trocar modo", e o "Iniciar" zerava o timer. A correção foi usar `closest('.pm-modo')`. Regra: não reutilize como seletor de ação um atributo `data-*` que também serve de estado visual num ancestral.
+
 ---
 
 ## 4. Mapeamento de Funcionalidades vs. Arquivos
 
-| Funcionalidade | Arquivo Principal |
+| Funcionalidade | Onde está |
 | :--- | :--- |
-| Inicialização & SPA | `js/app.js` |
-| Drag & Drop | `js/dragAndDrop.js` |
-| Notificações | `background.js` |
-| Gerenciamento de Modais | `js/modules/modal.js` |
-| Renderização de Views | `js/modules/renderer.js` |
-| Gerenciamento de Listas | `js/modules/manager.js` |
+| Bootstrap, roteamento das views (`switchTo*`, `hideAllViews`) e `window.appRouter` | `js/app.js` |
+| Menu lateral (grupos e itens) | `index.html` (`<nav>` do `#sidebar`), CSS `nav-` em `css/styles.css` (§3.22); listeners em `js/app.js` |
+| Cabeçalho (breadcrumb Ano › Mês › Semana, tema) | `index.html` + `renderPeriodoBreadcrumb()` em `js/app.js`. Detalhes em **`docs/header.md`** |
+| Sub-header (dias da semana) | `renderDiasNoSubheader()` / `openDailyView()` em `js/app.js`. Detalhes em **`docs/sub-header.md`** |
+| Semana ("Meu Planner") e página do dia | `renderWeeklyGrid()`, `openDailyView()`, widgets do dia em `js/app.js` |
+| Missão, Visão, Valores, Objetivos (+ páginas educacionais) | `switchToMissaoView/VisaoView/ValoresView/ObjetivosView()` em `js/app.js`; persistência no listener `crudSave` |
+| Planos Anual/Mensal/Semanal | `switchToPlanosView()` / `renderPlanoVersionado()` em `js/app.js` (§3.13, §3.14, §3.17) |
+| Atividades (lista, filtros, transferência) | `switchToAtividadesView()` / `renderAtividadesTable()` / `openTransferModal()` em `js/app.js` |
+| Modal de cadastro (CRUD) | `js/modules/crudModal.js` + `js/modules/crud/*` (formulários em `index.html`, `form-<tipo>`) |
+| Gerenciador de listas (Contextos, Alarmes…) | `openManager()` / `renderManagerList()` em `js/app.js`, modal `#global-manager-modal` |
+| Notificações / Alarmes | `js/services/NotificationService.js` (motor, registro de disparos, som); UI em `#manager-notificacoes` (gerenciador de Alarmes) e `view-settings` (§3.23) |
+| Lista de Compras | `js/modules/listaCompras.js` (+ `renderWidgetCompras()` em `js/app.js`), CSS `lc-` (§3.24) |
+| Pomodoro | `js/modules/pomodoro.js`, CSS `pm-` (§3.25) |
+| Arrastar e soltar | `js/dragAndDrop.js` + `initDragAndDrop()`/`_handle*` no `window.appRouter` |
+| Tema, fonte e layout da semana | `js/services/ThemeService.js`, `css/themes.css` |
+| Armazenamento | `js/services/StorageService.js` |
+| Servidor de teste | `rodar.bat` (§3.16) |
 
----
+### 4.1. Mapa de Dados (chaves de armazenamento)
+
+`StorageService` = `chrome.storage.local` na extensão ou `localStorage` fora dela. "localStorage direto" = sempre `localStorage`, de propósito, para ser síncrono e compartilhado entre abas.
+
+| Chave | Onde | Conteúdo |
+| :--- | :--- | :--- |
+| `planner_strategies` | StorageService | Registros versionados por `type`: `missao`, `visao`, `valores`, `obj_longo`/`obj_medio`/`obj_curto`, `plano_anual`/`plano_mensal`/`plano_semanal` (cada um com `id`, `content`, `timestamp`) |
+| `planner_activities` | StorageService | Atividades (`title`, `desc`, `date`, `status`, `category`, `contexto`, `eisenhower`, `transferPeriodo`…) |
+| `planner_alarme` | StorageService | Alarmes (`id`, `title`, `time`, `recurrence` diario/unico/semanal, `date`, `weekdays`) |
+| `planner_alarme_disparos` | localStorage direto | `{ [alarmId]: 'YYYY-MM-DDTHH:mm' }`, a última ocorrência já avisada (§3.23) |
+| `planner_compras` / `planner_compras_categorias` | StorageService | Lista de Compras (§3.24) |
+| `planner_compras_migrado_v2` | StorageService | Flag da migração dos formatos antigos de compras |
+| `planner_lista_compras` | StorageService | **Legado**, já migrado para `planner_compras` e não apagado |
+| `planner_pomodoro_estado` / `planner_pomodoro_config` | localStorage direto | Timer e tempos do Pomodoro (§3.25) |
+| `planner_journal` | StorageService | Diário: `{ 'YYYY-MM-DD': texto }` |
+| `planner_habito` / `planner_habitos` | StorageService | ⚠️ **Divergentes:** widget e exportação usam `planner_habito`, o CRUD grava `planner_habitos` (`pendencias.md` 1.1) |
+| `planner_habits_log` | StorageService | Respostas dos hábitos por dia |
+| `planner_contexto` / `planner_contextos` | StorageService | ⚠️ **Divergentes:** gerenciador, tabela e dados de exemplo usam `planner_contexto`; CRUD e formulário de atividade usam `planner_contextos` (`pendencias.md` 1.1) |
+| `planner_atividade-categoria` / `planner_atividade_categoria` | StorageService | ⚠️ **Divergentes**, com o mesmo padrão dos contextos (`pendencias.md` 1.1) |
+| `planner_historico` / `planner_motivacional` / `planner_devocional` | StorageService | Conteúdo dos widgets do dia |
+| `planner_settings` / `planner_settings_theme` | StorageService | Painéis ativos da página do dia; tema, fonte e layout |
+
+**Regra:** antes de criar uma chave nova ou um registro em `crud/formMappers.js`, procure a chave em todo o `js/` (leitores **e** escritores) e acrescente-a a esta tabela.
 
 ## 5. Dicas de Otimização e Boas Práticas
 1.  **Mantenha os Serviços Puros.**
 2.  **Use a API `StorageService` para tudo.**
 3.  **Seguir Padrão Modular:** Toda nova funcionalidade deve ser extraída para um módulo (`js/modules/`) caso ultrapasse 100 linhas.
+4.  **Uma chave de storage por entidade:** confira leitores e escritores antes de criar ou alterar uma chave (§4.1). As divergências de chave foram a causa dos bugs de Alarmes (§3.18), Compras (§3.24) e Contextos/Categorias/Hábitos (pendente).
+5.  **Não conte com classes Tailwind novas:** o build é o v2.2.19 sem JIT (§3.21). Confira se a classe existe, ou use CSS próprio com as variáveis de tema.
+6.  **Views são filhas diretas de `<main>`:** confira com `document.getElementById(id).parentElement` (§3.8, §3.20).
+7.  **Texto do usuário no `innerHTML` sempre escapado,** e links só `http(s)` (padrão de `listaCompras.js`/`switchToValoresView`).
+8.  **Estado compartilhado entre abas** (New Tab = várias abas): localStorage + Web Locks + registro do que já foi processado (§3.23, §3.25).
+9.  **Teste de verdade antes de concluir:** `rodar.bat` (ou o preview das sessões de IA) e o ciclo completo do recurso, também no tema escuro. Tipagem ou `node --check` não bastam.
 
 ---
 
@@ -198,3 +424,17 @@ C:\Users\luizn\Documents\07-PROJETOS\ext-planner\
 | **1.29** | 2026-09-19_21:30 | Claude Code (Sonnet 5) & User | **Reconstrução de views/formulários perdidos por dessincronia HTML/JS + bug real em formMappers.js:** Uma correção de encoding UTF-8 em sessão anterior restaurou `index.html` a partir de um `.bak` desatualizado (anterior à v1.6), enquanto `app.js` seguiu evoluindo — resultado: 34 IDs referenciados por `app.js` não existiam mais no HTML (5 formulários, 4 views, 1 modal, 2 containers de cabeçalho), causando páginas em branco em Plano Anual/Mensal/Semanal e Atividades. Reconstruídos: `form-visao`, `form-objetivos`, `form-plano_anual/mensal/semanal`, `view-planos`, `view-atividades`, `view-visao-educacional`, `view-objetivos-educacional`, `global-transfer-modal`, `header-week-tabs`; `view-missao-educacional` movida para dentro de `<main>` (reincidência do bug da seção 3.8). **Bug adicional descoberto e corrigido:** os 6 tipos self-managed em `formMappers.js` declaravam campos em português (`conteudo`/`tipo`/`titulo`) que nunca batiam com os IDs reais do HTML (`content`) nem com o que `app.js` lê do `formData` — isso significa que o formulário de Missão nunca havia sido testado ponta-a-ponta com sucesso antes desta correção. Projeto passou a ter repositório Git real (`github.com/LuizNogaroli/extTotalPlanner`) como rede de segurança. Ver histórico `reconstrucao_views_formularios_20260919_2130.md`. |
 | **1.30** | 2026-09-20_00:00 | Claude Code (Sonnet 5) & User | **Breadcrumb de navegação Ano › Mês › Semana no cabeçalho dos Planos:** Substituída a barra plana de botões de período (um nível por vez) por um breadcrumb `2026 › Set › Sem. 38` sempre com os 3 níveis, cada segmento abrindo um dropdown com as opções irmãs; clicar numa opção navega direto para o Plano correspondente já naquele período. Responsivo: abaixo de 768px colapsa num botão único que abre um painel com os 3 níveis empilhados. **3 bugs reais corrigidos no processo:** (1) `getPeriodoKey()`/`getPeriodoLabel()` nunca tratavam granularidade `'semana'` — Plano Semanal na prática agrupava por ano; agora reaproveita o cálculo de semana (domingo-sábado) já usado em `header-week-tabs`; (2) `switchToPlanosView()` sempre resetava o período selecionado para o atual, ignorando navegação explícita — adicionado parâmetro `periodoForcado`; (3) `grupos[periodoSelecionado].sort()` quebrava com `TypeError` para períodos sem registros (só o período atual tinha proteção). Também corrigido bug de posicionamento: dropdowns `position: absolute` eram cortados por `overflow-x-auto` no header (regra do CSS spec que força `overflow-y: auto` junto) — resolvido com container `#periodo-dropdown-root` fixo anexado ao `<body>`, posição calculada via `getBoundingClientRect()`. Ver histórico `breadcrumb_periodo_20260920_0000.md`. |
 | **1.31** | 2026-09-20_01:00 | Claude Code (Sonnet 5) & User | **Breadcrumb estendido ao Dashboard + dias no sub-header + Semana navega para Plano Semanal:** (1) O breadcrumb passou a aparecer também na tela inicial ("Meu Planner"), não só nas páginas de Plano — `renderPeriodoBreadcrumb()` generalizada para receber um callback `onSelecionar(key)` por chamador, já que o comportamento difere por contexto. **Bug de escopo corrigido:** as funções auxiliares de período viviam dentro do closure do `DOMContentLoaded`, mas precisavam ser chamadas por `renderWeeklyGrid()` (function declaration de nível superior do módulo, fora do closure) — `ReferenceError` na carga do Dashboard; movidas para o nível superior, junto com `getWeekNumber`/`getWeekDates`. (2) Os 7 botões de dia, que disputavam espaço com o breadcrumb na mesma linha do cabeçalho (causando overflow em telas médias), foram movidos para o sub-header já existente (`dynamic-header-tabs`, antes mantido vazio) — como efeito colateral, um destaque visual do dia selecionado na Visão Diária que nunca funcionava (procurava os botões nesse container antes deles existirem ali) voltou a funcionar sem nenhuma mudança adicional. (3) Clicar em "Semana" no breadcrumb (a partir do Dashboard, Plano Anual ou Mensal) agora navega para o Plano Semanal daquele período, que por sua vez popula o sub-header com os 7 dias daquela semana específica — nova função reutilizável `renderDiasNoSubheader(dates)`. Ver histórico `breadcrumb_dashboard_subheader_20260920_0100.md`. |
+| **1.32** | 2026-09-23_01:20 | Claude Code (Sonnet 5) & User | **Correção da funcionalidade de Alarmes/Notificações Push (7 quebras encadeadas):** Feature estava 100% inoperante desde a Fase 1 da refatoração CRUD (v1.26) — schema `alarme` novo em `crud/formMappers.js` (português, `planner_alarmes`) nunca foi conectado ao HTML real nem a `background.js` (schema original em inglês, `planner_alarme`). Corrigidos: IDs de campo do form, validação, chave de storage, `background.js` ignorando recorrência (único/semanal sempre repetiam diariamente), checkboxes de dias da semana inexistentes, link "Alarmes" do menu sem `onclick`, e função `openModal()` inexistente chamada em 3 lugares de `js/app.js` (bug que também quebrava "+ Novo Item" de Compras/Histórico/Motivacional/Devocional/Categorias/Hábitos). Bônus: `CRUDModal.save()` não gerava `id` para registros novos, fazendo o 2º registro sobrescrever o 1º (mesmo tipo de tipos genéricos). Testado ponta-a-ponta via `rodar.bat`-equivalente (criar/editar/excluir/múltiplos registros); disparo real da notificação via `chrome.alarms` requer extensão instalada, não verificável em navegador comum. Ver histórico `alarmes_notificacoes_cadeia_de_bugs_20260923_0120.md` e seção 3.18. |
+| **1.33** | 2026-09-23_21:20 | Claude Code (Sonnet 5) & User | **Migração de push para `Notification` padrão (inspirado em extListaDeCompras):** Substituído `chrome.alarms`/`chrome.notifications` (`background.js`, removido) pela Web API `Notification` no cliente, seguindo `extListaDeCompras/docs/notifications-and-sound.md` — elimina a limitação da v1.32 de só poder testar o disparo real instalando a extensão. `NotificationService.js` reescrito com motor de verificação (`setInterval` 20s, debounce por minuto) que lê `planner_alarme` e respeita `recurrence`/`date`/`weekdays`. Botão de permissão de 3 estados adicionado em `view-settings`. `manifest.json` simplificado (`permissions: ["storage"]`, chave `background` removida). Trade-off aceito: só dispara com alguma aba do Total Planner aberta (era o mesmo caso, na prática, já que `chrome.alarms` também exigia o SW acordado). **Bug pré-existente e não relacionado corrigido no processo:** `#view-dashboard` nunca fechava sua `<div>` corretamente, fazendo `#view-settings` (e views seguintes) ficarem aninhadas dentro dela e invisíveis mesmo com o toggle de `hidden` certo — variante do bug já catalogado na §3.8. Ver histórico `migracao_notification_api_20260923_2120.md` e `fix_view_dashboard_div_nao_fechada_20260923_2120.md`, seções 3.19 e 3.20. |
+| **1.34** | 2026-09-23_21:40 | Claude Code (Opus 5.5) & User | **"Plano Semanal" movido de volta para o menu `Operacional`:** o link estava de novo sob `Tático` — a mudança da v1.12 (que já o havia movido para o primeiro item de `Operacional`) se perdeu, provavelmente na restauração do `index.html` a partir de um `.bak` antigo (v1.29). Movido novamente para o primeiro item de `Operacional`, antes de "Meu Planner". Só mudou a posição no HTML; `id="menu-plano-semanal"` e o listener em `app.js` continuam iguais. Ver histórico `plano_semanal_menu_operacional_20260923_2140.md`. |
+| **1.35** | 2026-09-23_22:15 | Claude Code (Opus 5.5) & User | **Destaque do dia ativo no sub-header acumulava:** ao clicar num dia da semana e depois em outro, os dois ficavam cinza. Em `openDailyView()` (`js/app.js`), o dia ativo ganhava `bg-[var(--bg-color)]`/`text-[var(--primary-color)]`/`border-[var(--primary-color)]`, mas o reset dos demais botões removia outras classes (`bg-[var(--primary-color)]`/`text-white`), que nunca eram adicionadas nesses botões. Agora o destaque e o reset usam as mesmas listas (`activeClasses`/`inactiveClasses`), então só um dia fica destacado por vez. Ver histórico `destaque_dia_ativo_subheader_20260923_2215.md`. |
+| **1.36** | 2026-09-23_22:45 | Claude Code (Opus 5.5) & User | **Documentação técnica do header e do sub-header:** criados `docs/header.md` (três zonas em Flexbox, cada botão e seu handler, breadcrumb Ano › Mês › Semana com chaves de período, `#periodo-dropdown-root` fora do `overflow-x-auto`, responsivo em 768px, ciclo de vida via `hideAllViews()`) e `docs/sub-header.md` (`renderDiasNoSubheader()`, clique → `goDaily` → `openDailyView`, destaque do dia ativo, drag & drop). Sem mudança de código. A §3.6 foi marcada como desatualizada e aponta para os novos arquivos. **Problemas encontrados e registrados, não corrigidos:** botão "Relatório" do header sem handler; breadcrumb não alterna desktop/mobile ao redimensionar (verificado); no Plano Semanal, clicar num dia do sub-header não abre a Visão Diária (verificado); drop num dia dispara `layoutChange` em `document`, mas o listener escuta `layoutChanged` em `window` (leitura de código). |
+| **1.37** | 2026-09-23_23:00 | Claude Code (Opus 5.5) & User | **Título na página do dia (Visão Diária):** o `#daily-view-title` já existia na mesma linha do botão "+ Nova Atividade" (`index.html`), mas `openDailyView()` o escondia (`classList.add('hidden')`). Agora ele é preenchido no formato `Aaa - DD/MM` (ex.: "Qua - 23/09") e fica visível. A função `renderDailyView()`, que também escrevia nesse elemento, não é chamada em lugar nenhum (código morto) e não foi alterada. Ver histórico `titulo_pagina_dia_20260923_2300.md`. |
+| **1.38** | 2026-09-23_23:20 | Claude Code (Opus 5.5) & User | **Header enxugado:** removidos os botões "🖨️ Relatório" (não tinha handler, não fazia nada) e "+ Novo" (`#btn-new-activity`) da zona direita do header, e também o listener de `#btn-new-activity` em `app.js`. O botão de tema claro/escuro (`#btn-theme-toggle`) passa a ser o único item da direita, encostado na borda (16px = `px-4` do header). Continuam existindo outros caminhos para criar atividade: "+ Nova Atividade" nos cards de dia e na página do dia, e "Cadastrar Atividade" em Atividades. Ver histórico `header_remocao_relatorio_novo_20260923_2320.md` e `docs/header.md`. |
+| **1.39** | 2026-09-23_23:40 | Claude Code (Opus 5.5) & User | **Nova seção "Valores" (nível Estratégico):** link `#menu-valores` abaixo de "Objetivos" no menu lateral. A página segue o esquema da Visão (texto único versionado: card "Valores Atuais" + "Valores (versões anteriores)"), com botões "📚 Educacional" e "✏️ Atualizar Valores". Criados `switchToValoresView()`, `form-valores` (modal CRUD), `view-valores-educacional` (filha de `<main>`, §3.8), registro `valores` em `crud/formMappers.js`, `'valores'` em `SELF_MANAGED_TYPES` e um ramo `type === 'valores'` no listener `crudSave`. `view-valores-educacional` entrou em `hideAllViews()`, e `'valores': 'Valores'` entrou no `mapType` do gerenciador de estratégias. Diferenças em relação à Visão: o conteúdo é escapado antes do `innerHTML` (testado com `<img onerror>`) e as quebras de linha são preservadas (`whitespace-pre-line`), porque valores costumam ser uma lista. Registros ficam em `planner_strategies` com `type: 'valores'`. "Valores" já constava no Nível 1 da Pirâmide (`Sobre_extPlanner.md` §2.1). Ver histórico `valores_estrategico_20260923_2340.md`. |
+| **1.40** | 2026-09-23_23:55 | Claude Code (Opus 5.5) & User | **Hierarquia visual do menu lateral:** 1º nível (grupos e atalhos do rodapé) virou botões com borda e cantos arredondados. 2º nível (itens) ficou recuado, com fundo suavizado e fio guia à esquerda. Novas classes `nav-group-btn`, `nav-top-btn`, `nav-sub` e `nav-subitem` em `css/styles.css` (§3.22), no lugar das classes Tailwind nos elementos do `<nav>`. Todos os `id`/`onclick` foram mantidos, e o JS de item ativo não mudou. A seta ▶ agora gira ao abrir o grupo (`group-open:rotate-90` não existia no build local, §3.21). O tema escuro usa um tom clareado da primária nos destaques. Ver histórico `sidebar_hierarquia_visual_20260923_2355.md`. |
+| **1.41** | 2026-09-24_00:05 | Claude Code (Opus 5.5) & User | **Novo grupo "Recursos" no menu lateral:** quarto `<details>` de 1º nível, depois de "Operacional" e fechado por padrão, com o link "⏰ Alarmes" movido de "Operacional" para dentro dele. O link continua com o mesmo `onclick="window.appRouter.openManager('alarme')"`, então nenhuma mudança de JS foi necessária. "Recursos" fica fora da Pirâmide do Planejamento (`Sobre_extPlanner.md`): é um grupo de ferramentas de apoio, não um nível de planejamento. Ver histórico `sidebar_hierarquia_visual_20260923_2355.md` (seção "Grupo Recursos"). |
+| **1.42** | 2026-09-24_00:30 | Claude Code (Opus 5.5) & User | **Alarmes corrigidos (inspiração: extListaDeCompras):** reproduzidos 3 defeitos do motor da v1.33: duplicata com várias abas, duplicata ao recarregar no minuto do alarme e alarme perdido quando o minuto exato era pulado (aba em segundo plano, PC suspenso). `NotificationService.js` reescrito com registro de disparos compartilhado (`localStorage` + Web Locks), janela de tolerância de 10 min (com aviso de atraso), verificação em `visibilitychange`, `markHandled()` ao salvar, `tag`/`requireInteraction` e som sintetizado (Web Audio, liberado no 1º gesto da aba). Faixa de permissão com "Testar aviso" dentro do gerenciador de Alarmes; salvar um alarme pede a permissão se ainda não decidida; a lista reabre depois de salvar. `"notifications"` voltou ao manifest (concede a API na extensão instalada). Testado: 2 abas reais → 1 aviso; recarregar → sem repetição; alarme de 3 min atrás dispara, e de 20 min não; alarme criado depois do horário não dispara. Ver §3.23 e histórico `alarmes_motor_robusto_20260924_0030.md`. |
+| **1.43** | 2026-09-24_01:30 | Claude Code (Opus 5.5) & User | **Recursos: Pomodoro e Lista de Compras + grupo "Outros Sistemas":** (1) **Lista de Compras** interna copiada e adaptada de `extListaDeCompras` (módulo `js/modules/listaCompras.js`): categorias, itens com preço estimado, fornecedores com link, "comprado", busca/filtro, cortina de marketplaces (dados de exemplo) e avisos de preço/fornecedor com som de moeda. Migra os dois formatos antigos de compras, que nunca se encontravam (widget lia `planner_compras`, CRUD gravava em `planner_lista_compras`). O widget "Compras" da página do dia passou a mostrar os pendentes da lista nova e a levar a ela. (2) **Pomodoro** funcional (`js/modules/pomodoro.js`): foco/pausa curta/pausa longa configuráveis, término por instante (`fimEm`), aviso único entre abas (Web Locks), tempo no título da aba. (3) Menu: Pomodoro e Lista de Compras em Recursos, abaixo de Alarmes, e novo grupo **Outros Sistemas** (vazio, com texto "Nenhum sistema vinculado ainda."). Ver §3.24, §3.25 e histórico `recursos_pomodoro_compras_outros_sistemas_20260924_0130.md`. |
+| **1.44** | 2026-09-24_02:00 | Claude Code (Opus 5.5) & User | **Revisão do `rodar.bat`:** o servidor embutido (thread única) **travava** o carregamento (página sem JS, verificado) e, por `allow_reuse_address` no Windows, podia dividir a porta 8000 com outro projeto sem erro (verificado). Novo servidor: `ThreadingHTTPServer`, porta 8000 ou a próxima livre (sonda 127.0.0.1/::1 antes do bind, `SO_EXCLUSIVEADDRUSE`), só em 127.0.0.1, abre o navegador quando está pronto, janela com `cmd /k`, Python via `py -3` com fallback, arquivo em CRLF/ASCII. Testado: página completa (13 JS), porta ocupada → próxima, cabeçalhos `no-store`/`text/javascript`, invisível na rede, e a cópia de teste do `.bat` no `cmd.exe` real decodifica um servidor idêntico ao testado. Ver §3.16 e histórico `rodar_bat_revisao_20260924_0200.md`. |
+| **1.45** | 2026-09-24_02:30 | Claude Code (Opus 5.5) & User | **Documentação sincronizada com o código:** §1 (arquitetura real: MV3 sem service worker, sem build, Tailwind v2 sem JIT, dados, teste) e §2 (árvore real de `extTotalPlanner/`, com os módulos mortos sinalizados) reescritas; §3.21 corrigida (o Tailwind é o v2.2.19 completo **sem JIT**: nenhuma classe arbitrária funciona, verificado, 66 classes ausentes); §4 reescrita (antes apontava para módulos mortos) + nova §4.1 Mapa de Dados; §5 ampliada. `pendencias.md` reorganizado como lista completa do que precisa de correção. Achados novos: chaves divergentes em Contextos/Categorias/Hábitos, telas Relatórios/Exportar inalcançáveis, relatório do Diário em tela escondida, botões 🖨️ sem ação, 44 scripts avulsos na raiz. Também atualizados: `Sobre_extPlanner.md` (v2.1), `CLAUDE.md`/`GEMINI.md` (sincronizados), `UX_LAYOUT.md`, `ANALISE_MANUTENIBILIDADE.md` (aviso de desatualização). Nenhuma mudança de código. Ver histórico `documentacao_sincronizada_20260924_0230.md`. |

@@ -1,0 +1,14 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "extplanner",
+      "runtimeExecutable": "python",
+      "runtimeArgs": [
+        "-c",
+        "import http.server as h, functools as f\nclass H(h.SimpleHTTPRequestHandler):\n    def end_headers(self):\n        self.send_header('Cache-Control', 'no-store, no-cache, must-revalidate, max-age=0')\n        super().end_headers()\n    def guess_type(self, path):\n        return 'text/javascript' if path.endswith(('.js', '.mjs')) else super().guess_type(path)\nh.ThreadingHTTPServer(('', 8030), f.partial(H, directory=r'C:\\Users\\luizn\\Documents\\07-PROJETOS\\extTotalPlanner')).serve_forever()"
+      ],
+      "port": 8030
+    }
+  ]
+}
