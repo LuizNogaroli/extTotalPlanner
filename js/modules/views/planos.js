@@ -6,10 +6,9 @@
  *   - switchToPlanosView(prazo, periodoForcado) — mostra página de Planos
  *   - switchToAtividadesView() — mostra página de Atividades
  *   - renderAtividadesTable() — renderiza tabela de atividades
- *   - seedDemoEstrategicos() — popula dados de exemplo
- *   - seedDemoAtividades() — popula atividades de exemplo
  *
  * Extraído de js/app.js na Fase 6 do plano de refatoração (docs/plano_refatoracao_appjs.md).
+ * Dados de teste devem ser inseridos manualmente via DevTools/Testes.
  */
 
 let crudModal = null;
@@ -306,7 +305,6 @@ export async function switchToAtividadesView() {
         <div class="flex justify-between items-center mb-6">
             <h2 class="text-2xl font-bold text-[var(--text-primary)]">📋 Atividades</h2>
             <div class="flex gap-2">
-                <button id="btn-seed-atividades" class="px-4 py-2 border border-[var(--border-color)] rounded-lg font-semibold text-[var(--text-secondary)] hover:bg-[var(--border-color)] transition-all">🎲 Carregar dados de exemplo</button>
                 <button id="btn-nova-atividade-lista" class="px-4 py-2 bg-[var(--primary-color)] text-white rounded-lg font-semibold hover:bg-[var(--primary-color)]/90 transition-all">
                     + Cadastrar Atividade
                 </button>
@@ -356,7 +354,6 @@ export async function switchToAtividadesView() {
     `;
 
     document.getElementById('btn-nova-atividade-lista').addEventListener('click', () => crudModal.open('atividade'));
-    document.getElementById('btn-seed-atividades').addEventListener('click', seedDemoAtividadesPlanos);
 
     ['atividades-filtro-texto', 'atividades-filtro-status', 'atividades-filtro-categoria', 'atividades-filtro-contexto'].forEach(id => {
         const el = document.getElementById(id);
@@ -394,147 +391,6 @@ export async function switchToAtividadesView() {
     });
 
     await renderAtividadesTable();
-}
-
-async function seedDemoEstrategicosPlanos() {
-    if (!confirm('Recuperar dados de Missão, Visão e Objetivos? Registros existentes serão preservados.')) return;
-
-    const now = Date.now();
-
-    // Missões
-    const missoes = await window.StorageService.get('planner_strategies') || [];
-    const demoMissoes = [
-        {
-            type: 'missao',
-            content: 'Criar soluções digitais inovadoras que empoderem indivíduos e organizações a alcançar seus objetivos estratégicos com clareza, eficiência e segurança, mantendo excelência técnica e satisfação do usuário como prioridades.',
-            timestamp: now - 86400000 * 7
-        },
-        {
-            type: 'missao',
-            content: 'Desenvolver produtos que simplifiquem a gestão estratégica e operacional, tornando o planejamento acessível a todos os níveis organizacionais.',
-            timestamp: now - 86400000 * 3
-        }
-    ];
-
-    for (const missao of demoMissoes) {
-        if (!missoes.some(m => m.type === 'missao' && m.content === missao.content)) {
-            missoes.push({ id: 'm_' + now + '_' + Math.random().toString(36).slice(2, 7), ...missao });
-        }
-    }
-
-    // Visões
-    const demoVisoes = [
-        {
-            type: 'visao',
-            content: 'Ser reconhecida globalmente como a plataforma líder em planejamento estratégico integrado, onde profissionais, executivos e organizações realizam seu potencial máximo através de ferramentas intuitivas e confiáveis que conectam sonhos a ações concretas.',
-            timestamp: now - 86400000 * 5
-        },
-        {
-            type: 'visao',
-            content: 'Um mundo onde cada pessoa e organização tem acesso a ferramentas que tornam a estratégia clara, o planejamento simples e o sucesso tangível.',
-            timestamp: now - 86400000 * 1
-        }
-    ];
-
-    for (const visao of demoVisoes) {
-        if (!missoes.some(v => v.type === 'visao' && v.content === visao.content)) {
-            missoes.push({ id: 'v_' + now + '_' + Math.random().toString(36).slice(2, 7), ...visao });
-        }
-    }
-
-    // Objetivos
-    const demoObjetivos = [
-        { type: 'obj_longo', content: 'Dominar completamente a arquitetura de software de produção, sendo capaz de desenhar soluções escaláveis para problemas complexos.', timestamp: now - 86400000 * 60 },
-        { type: 'obj_longo', content: 'Estabelecer reputação como especialista em desenvolvimento de aplicações estratégicas.', timestamp: now - 86400000 * 50 },
-        { type: 'obj_medio', content: 'Implementar completamente o extPlanner como ferramenta de gestão estratégica 100% funcional.', timestamp: now - 86400000 * 30 },
-        { type: 'obj_medio', content: 'Dominar os frameworks modernos de frontend (React/Vue) e backend (Node.js/Python).', timestamp: now - 86400000 * 20 },
-        { type: 'obj_curto', content: 'Finalizar a seção operacional do extPlanner com listagem de atividades, filtros e relatórios.', timestamp: now - 86400000 * 5 },
-        { type: 'obj_curto', content: 'Revisar e otimizar o código da sprint atual, reduzindo débito técnico.', timestamp: now - 86400000 * 2 }
-    ];
-
-    for (const obj of demoObjetivos) {
-        if (!missoes.some(m => m.type === obj.type && m.content === obj.content)) {
-            missoes.push({ id: 'obj_' + now + '_' + Math.random().toString(36).slice(2, 7), ...obj });
-        }
-    }
-
-    // Planos
-    const demoPlanos = [
-        { type: 'plano_anual', content: 'Consolidar a base de clientes do primeiro semestre e revisar o roadmap anual.', timestamp: now - 86400000 * 30 },
-        { type: 'plano_anual', content: 'Expandir a base de usuários do extPlanner para 1000 usuários ativos, consolidar arquitetura escalável e preparar para investimento Series A.', timestamp: now - 86400000 * 15 },
-        { type: 'plano_mensal', content: 'Revisar backlog do mês e priorizar bugs críticos reportados pelos usuários.', timestamp: now - 86400000 * 10 },
-        { type: 'plano_mensal', content: 'Implementar seção de relatórios, melhorar UX do dashboard e completar testes unitários de 80% do código.', timestamp: now - 86400000 * 5 },
-        { type: 'plano_semanal', content: 'Planejar sprint da semana com foco em correções de responsividade.', timestamp: now - 86400000 * 3 },
-        { type: 'plano_semanal', content: 'Finalizar integração de drag-and-drop, corrigir bugs de responsividade mobile e documentar API de plugins.', timestamp: now - 86400000 * 1 }
-    ];
-
-    for (const plano of demoPlanos) {
-        if (!missoes.some(m => m.type === plano.type && m.content === plano.content)) {
-            missoes.push({ id: 'p_' + now + '_' + Math.random().toString(36).slice(2, 7), ...plano });
-        }
-    }
-
-    await window.StorageService.set('planner_strategies', missoes);
-
-    alert(`Dados de Missão/Visão/Objetivos/Planos recuperados (ou já estavam presentes).`);
-
-    // Re-render se alguma dessas views estiver ativa
-    if (currentStrategicSection === 'missao') await switchToMissaoView();
-    else if (currentStrategicSection === 'visao') await switchToVisaoView();
-    else if (!document.getElementById('view-objetivos-educacional').classList.contains('hidden')) await switchToObjetivosView();
-    const viewPlanosEl = document.getElementById('view-planos');
-    if (viewPlanosEl && !viewPlanosEl.classList.contains('hidden')) await switchToPlanosView(currentPlanosTab);
-}
-
-async function seedDemoAtividadesPlanos() {
-    if (!confirm('Carregar dados de exemplo (categorias, contextos e atividades de demonstração)? Atividades com o mesmo título não serão duplicadas.')) return;
-
-    const now = Date.now();
-    const iso = new Date().toISOString();
-    const uid = () => Math.random().toString(36).slice(2, 7);
-
-    const cats = await window.StorageService.get('planner_atividade-categoria') || [];
-    const demoCats = ['Trabalho', 'Saúde', 'Estudo', 'Casa'];
-    for (const nome of demoCats) {
-        if (!cats.some(c => c.nome === nome)) cats.push({ id: 'cat_' + now + '_' + uid(), nome });
-    }
-    await window.StorageService.set('planner_atividade-categoria', cats);
-
-    const ctx = await window.StorageService.get('planner_contexto') || [];
-    const demoCtx = ['Profissional', 'Pessoal', 'Família'];
-    for (const nome of demoCtx) {
-        if (!ctx.some(c => c.nome === nome)) ctx.push({ id: 'ctx_' + now + '_' + uid(), nome });
-    }
-    await window.StorageService.set('planner_contexto', ctx);
-
-    const fmt = (offset) => {
-        const d = new Date();
-        d.setDate(d.getDate() + offset);
-        return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
-    };
-    const demoActs = [
-        { title: 'Revisar relatório mensal', desc: 'Consolidar números do mês e enviar para a diretoria.', date: fmt(0), status: 'livre', category: 'Trabalho', contexto: 'Profissional', eisenhower: 'q1' },
-        { title: 'Corrida matinal 5km', desc: 'Manter rotina de saúde.', date: fmt(1), status: 'livre', category: 'Saúde', contexto: 'Pessoal', eisenhower: 'q2' },
-        { title: 'Estudar capítulo de JavaScript', desc: 'Módulos ES6 e promises.', date: fmt(2), status: 'livre', category: 'Estudo', contexto: 'Pessoal', eisenhower: 'q2' },
-        { title: 'Pagar contas do mês', desc: 'Água, luz e internet.', date: fmt(0), status: 'livre', category: 'Casa', contexto: 'Família', eisenhower: 'q3' },
-        { title: 'Planejar jantar em família', desc: 'Organizar fim de semana.', date: fmt(3), status: 'livre', category: 'Casa', contexto: 'Família', eisenhower: 'q4' },
-        { title: 'Enviar proposta comercial', desc: 'Ajustar escopo com o cliente.', date: fmt(-1), status: 'concluido', category: 'Trabalho', contexto: 'Profissional', eisenhower: 'q1' }
-    ];
-
-    const acts = await window.StorageService.get('planner_activities') || [];
-    let added = 0;
-    for (const d of demoActs) {
-        if (!acts.some(a => a.title === d.title)) {
-            acts.push({ id: 'act_' + now + '_' + uid(), createdAt: iso, ...d });
-            added++;
-        }
-    }
-    await window.StorageService.set('planner_activities', acts);
-
-    if (!document.getElementById('view-atividades').classList.contains('hidden')) {
-        await switchToAtividadesView();
-    }
-    alert(added > 0 ? `Dados de exemplo carregados: ${added} atividade(s) adicionada(s).` : 'Os dados de exemplo já estavam carregados.');
 }
 
 export async function renderAtividadesTable() {
