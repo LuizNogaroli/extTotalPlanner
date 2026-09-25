@@ -356,7 +356,7 @@ export async function switchToAtividadesView() {
     `;
 
     document.getElementById('btn-nova-atividade-lista').addEventListener('click', () => crudModal.open('atividade'));
-    document.getElementById('btn-seed-atividades').addEventListener('click', seedDemoAtividades);
+    document.getElementById('btn-seed-atividades').addEventListener('click', seedDemoAtividadesPlanos);
 
     ['atividades-filtro-texto', 'atividades-filtro-status', 'atividades-filtro-categoria', 'atividades-filtro-contexto'].forEach(id => {
         const el = document.getElementById(id);
@@ -396,7 +396,7 @@ export async function switchToAtividadesView() {
     await renderAtividadesTable();
 }
 
-async function seedDemoEstrategicos() {
+async function seedDemoEstrategicosPlanos() {
     if (!confirm('Recuperar dados de Missão, Visão e Objetivos? Registros existentes serão preservados.')) return;
 
     const now = Date.now();
@@ -486,7 +486,7 @@ async function seedDemoEstrategicos() {
     if (viewPlanosEl && !viewPlanosEl.classList.contains('hidden')) await switchToPlanosView(currentPlanosTab);
 }
 
-async function seedDemoAtividades() {
+async function seedDemoAtividadesPlanos() {
     if (!confirm('Carregar dados de exemplo (categorias, contextos e atividades de demonstração)? Atividades com o mesmo título não serão duplicadas.')) return;
 
     const now = Date.now();
