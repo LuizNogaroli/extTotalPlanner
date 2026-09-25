@@ -37,3 +37,6 @@ class StorageService {
         });
     }
 }
+
+// Expor globalmente para uso em módulos ES6
+window.StorageService = StorageService;
