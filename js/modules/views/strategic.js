@@ -18,7 +18,6 @@ let hideAllViews = null;
 let viewStrategic = null;
 let headerTitle = null;
 let currentStrategicSection = null;
-let seedDemoEstrategicos = null;
 
 let btnVoltarMissaoListenersAttached = false;
 let btnVoltarVisaoListenersAttached = false;
@@ -30,7 +29,6 @@ export function initStrategicViews(domRefs) {
     hideAllViews = domRefs.hideAllViews;
     viewStrategic = domRefs.viewStrategic;
     headerTitle = domRefs.headerTitle;
-    seedDemoEstrategicos = domRefs.seedDemoEstrategicos;
 
     // Menu listeners
     document.getElementById('menu-missao').addEventListener('click', switchToMissaoView);
@@ -135,7 +133,9 @@ export async function switchToMissaoView() {
 
     const btnSeedEstrategicos = document.getElementById('btn-seed-estrategicos');
     if (btnSeedEstrategicos) {
-        btnSeedEstrategicos.addEventListener('click', seedDemoEstrategicos);
+        btnSeedEstrategicos.addEventListener('click', () => {
+            alert('Funcionalidade indisponível. Use o botão em Planos para carregar dados de exemplo.');
+        });
     }
 
     const btnEducacionalMissao = document.getElementById('btn-educacional-missao');
